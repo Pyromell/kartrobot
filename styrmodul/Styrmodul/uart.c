@@ -1,43 +1,38 @@
 #pragma once
 #include <avr/io.h>
-#include <util/delay.h>
+#include <time.h>
 
-void UART_init(void) {
-	unsigned int baud = 9600;
-	
+#define F_CPU 16000000UL
+#define UBRR 103
+//#define MYUBRR FCPU/8/BAUD-1
+
+void UART_Init(void) {
 	// UART med Kommunikationsmodul
-	UBRR0H = (unsigned char)(baud >> 8);
-	UBRR0L = (unsigned char)baud;
+	UBRR0 = UBRR;
 	
 	UCSR0B = (1 << RXEN0) | (1 << TXEN0);
 	UCSR0C = (1 << USBS0) | (3 << UCSZ00);
 	
-	
 	// UART med sensormodul
-	UBRR1H = (unsigned char)(baud >> 8);
-	UBRR1L = (unsigned char)baud;
+	UBRR1 = UBRR;
 	
 	UCSR1B = (1 << RXEN1) | (1 << TXEN1);
 	UCSR1C = (1 << USBS1) | (3 << UCSZ10);
 }
 
-unsigned char UART_recive(void) {
+unsigned char UART_Recive(void) {
 	while ( !UCSR0A & (1 << RXC0) )
 	;
 	return UDR0;
 }
 
-void UART_transmit(unsigned char data) {
-
+void UART_Transmit(unsigned char data) {
 	// wait for empty transmit buffer
-	while ( !(UCSR0A) & (1 << UDRE0) )
-	;
+	while ( !(UCSR0A & (1 << UDRE0)) ) ;
+	
+	for (int i = 0; i < 99; ++i)
+		asm("NOP");
+		
 	// put data into buffer
 	UDR0 = data;
-	
-	while ( !(UCSR0A) & (1 << TXC0) )
-	;
 }
-
-// 9600 bau
-// 8900 pak
