@@ -60,9 +60,9 @@ def main() -> int:
                     case 1:
                         uart_send(b'Got message fram')
                     case 2:
-                        uart_send(b'Got message sväng höger')
+                        uart_send(b'Got message svang hoger')
                     case 3:
-                        uart_send(b'Got message sväng vänster')
+                        uart_send(b'Got message svang vanster')
                     case 4:
                         uart_send(b'Got message manuell / autonom')
             # TODO: Send sensor and map data
