@@ -13,19 +13,21 @@ int main(void)
 
 
 	SetSensor_IR_IO();
-	//SetSensor_Gyro();
+	SetSensor_Gyro();
 	              
-	uint16_t result;
+	uint16_t result = 3;
 	              
 	//	Untested code
-	//if (ReadSensor_Gyro_SetActiveMode())
-	//if (ReadSensor_Gyro_StartAngularConversion())
-	//result = ReadSensor_Gyro_ReadResult();
-	              
+	if (ReadSensor_Gyro_SetActiveMode());
+	
+		        
 	while (1)
 	{
-		uint16_t distance = ReadSensor_IR();
-		PORTD = distance;
+	if (ReadSensor_Gyro_StartAngularConversion())
+		result = ReadSensor_Gyro_ReadResult();
+	PORTD = result;
+		//uint16_t distance = ReadSensor_IR();
+		//PORTD = distance;
 	}
 }
 

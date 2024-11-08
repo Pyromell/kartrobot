@@ -16,17 +16,16 @@ void SetSensor_Gyro()
 	DDR_SPI = (1 << PIN_SPI_SCLK) | (1 <<  PIN_SPI_MOSI) | (0 <<  PIN_SPI_MISO) | (1 <<  PIN_SPI_CS);
 	
 	//	double check the CPOL and CPHA relationship, page 168 for ATMega1284P
-	SPCR = (1 << SPE) | (0 << DORD) | (0 << CPOL) | (0 << CPHA);
-	
+	SPCR = (1 << SPE) | (1 << MSTR) | (0 << DORD) | (0 << CPOL) | (0 << CPHA); //| (1<<SPR1) | (1 << SPR0);
 }
 
 uint16_t ReadSensor_Gyro_Answer()
 {
+	while (!(SPSR & (1 << SPIF)));
 	uint16_t data = (uint16_t)SPDR;		//	read the Byte
 	data <<= 8;
-	while (!(SPSR & (1 << SPIF)));		//	wait
+	//while (!(SPSR & (1 << SPIF)));		//	wait
 	data |= (uint16_t)SPDR;
-	while (!(SPSR & (1 << SPIF)));
 	return data;
 }
 
@@ -68,7 +67,11 @@ uint8_t ReadSensor_Gyro_SetActiveMode()
 {
 	ReadSensor_Gyro_TransmitByte(0b10010100);
 	uint16_t answer = ReadSensor_Gyro_Answer();
-	return !(uint8_t)!((1 << 15) & answer);
+	answer &= (1 << 15);
+	if (answer)
+		return 0;
+	else
+		return 1;
 }
 
 //	returns true if successfull
@@ -76,7 +79,11 @@ uint8_t ReadSensor_Gyro_StartAngularConversion()
 {
 	ReadSensor_Gyro_TransmitByte(0b10010100);
 	uint16_t answer = ReadSensor_Gyro_Answer();
-	return !(uint8_t)!((1 << 15) & answer);
+	answer &= (1 << 15);
+	if (answer)
+		return 0;
+	else
+		return 1;
 }
 
 //	returns true if successfull
@@ -96,13 +103,16 @@ uint16_t ReadSensor_Gyro_ReadResult()
 	while ((answer & (1 << 13)) == 0)	//	while EOC is not set
 	{
 		if (answer & ((1 << 15)))		//	if at any point, the command is rejected, return immediately
-		return 0xFFFF;
+			return 0xFFFF;
+		ReadSensor_Gyro_TransmitByte(0b10000000);
 		answer = ReadSensor_Gyro_Answer();	//
 	}
 	
-	
+	answer >>=1;
+	answer &= 0b0000011111111111;
+
 	//	return only the bits 11 down to 1, shifted once to the right
-	return (answer >> 1) & ((1 << 11) - 1);
+	return answer;
 }
 
 
