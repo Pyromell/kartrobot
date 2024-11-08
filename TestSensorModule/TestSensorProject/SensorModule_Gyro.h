@@ -1,8 +1,5 @@
-
-
-#include <avr/io.h>
-#include <float.h>
-
+#ifndef SENSORMODULE_GYRO_H_
+#define SENSORMODULE_GYRO_H_
 
 #define DDR_SPI DDRB
 #define PIN_SPI_CS 4
@@ -11,55 +8,6 @@
 #define PIN_SPI_SCLK 7
 
 
-void ADC_start()
-{
-	ADCSRA |= (1<<ADSC);
-}
-
-void SetSensor_IR_IO()
-{
-	PORTA = 0b00010010;
-	DDRA  = 0b00110110;
-	// bit 7-6 vref, 5 left or right shifted, 4-0 MUX
-	ADMUX = 0b11100000;
-	
-	//bit 7 enable, 6 start conversion, 4 ADC done flag (Read only)
-	ADCSRA =0b10000000;
-	
-}
-
-float ReadSensor_IR_ToDistance(uint16_t adcValue)
-{
-	float v_out = ((float)(adcValue)/1023.0)*5;
-	
-	float distance = 27.86/(v_out-0.42);
-	return distance;
-}
-
-
-uint16_t ReadSensor_IR_ToDistance_Temp(uint16_t value)
-{
-	if (value < 10) value = 10;
-	return ((67870.0/ (value-3.0))- 40.0);
-}
-
-uint16_t ReadSensor_IR()
-{
-	ADC_start();
-	
-	//	0b00010000 & b10000000
-	//	waits until ADC convertion is done,
-	//	indictated by the ADEN
-	//	then reads the value
-	while( !((1<<ADEN) & ADCSRA) );
-	
-	uint8_t ADC_High = ADCH;
-	uint8_t ADC_Low	= ADCL;
-	
-	//uint16_t ADC = ((uint16_t)(ADC_High) + (uint16_t)(ADC_Low));
-	return ReadSensor_IR_ToDistance_Temp((uint16_t)(ADC_High) + (uint16_t)(ADC_Low));
-
-}
 
 void SetSensor_Gyro()
 {
@@ -88,7 +36,7 @@ void ReadSensor_Gyro_Receive(uint8_t* data, uint8_t length)
 	{
 		data[i++] = SPDR;						//	read the Byte
 		while (!(SPSR & (1 << SPIF)));		//	wait
-	}	
+	}
 }
 
 
@@ -148,8 +96,8 @@ uint16_t ReadSensor_Gyro_ReadResult()
 	while ((answer & (1 << 13)) == 0)	//	while EOC is not set
 	{
 		if (answer & ((1 << 15)))		//	if at any point, the command is rejected, return immediately
-			return 0xFFFF;
-		answer = ReadSensor_Gyro_Answer();	//	
+		return 0xFFFF;
+		answer = ReadSensor_Gyro_Answer();	//
 	}
 	
 	
@@ -157,33 +105,7 @@ uint16_t ReadSensor_Gyro_ReadResult()
 	return (answer >> 1) & ((1 << 11) - 1);
 }
 
-int main(void)
-{
 
 
-	/*
-		ADC init
-		ADSC start conversion bit i ADCSRA
-		ADMUX internal vref 
-	*/
-	SetSensor_IR_IO();
-	SetSensor_Gyro();
-	
-	uint16_t result;
-	
-	//	Untested code
-	if (ReadSensor_Gyro_SetActiveMode())
-	if (ReadSensor_Gyro_StartAngularConversion())
-		result = ReadSensor_Gyro_ReadResult();
-	
-	int cnt = 0;
-	cnt = 10;
-	cnt = result;
 
-    while (1) 
-    {
-		
-		uint16_t distance = ReadSensor_IR();
-    }
-}
-
+#endif /* SENSORMODULE_GYRO_H_ */
