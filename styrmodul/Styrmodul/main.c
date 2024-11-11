@@ -6,75 +6,23 @@
 
 #include "uart.c"
 
+//Global variables:
+
+uint8_t wheel_marker_l = 0; // One cog index is one white 'marker' on the wheel
+uint8_t wheel_marker_r = 0; 
+
+uint16_t ir_data[6];
+uint16_t gyro_data;
+
 int main(void)
 {
 	PORT_init();
 	PWM_init();
 	UART_Init();
 	
-	uint8_t right_wheel = 0;
-	uint8_t left_wheel = 0;
-
-	north();
-	for (int i = 0; i < 99999; ++i)
-	{
-		right_wheel = speed_select(0) & 0x80;
-		left_wheel = speed_select(0) & 0x40;
-		PORTD |= right_wheel;
-		PORTD |= left_wheel;
-	}
-		
+	uint8_t distance = 0;
     while (1) 
     {
-		
-		PORTD &= 0x0;
-		
-		/*
-		south();
-		for (int i = 0; i < 99999; ++i)
-		{
-			right_wheel = speed_select(1) & 0x80;
-			left_wheel = speed_select(1) & 0x40;
-			PORTD |= right_wheel;
-			PORTD |= left_wheel;
-		}
-		
-		for (int i = 0; i < 99999999999; ++i)
-		{
-			PORTD = 0x00;
-			PORTD = 0x00;
-		}
-		*/
-		/*
-		north();
-		for (int i = 0; i < 999; ++i)
-		{
-			right_wheel = speed_select(2) & 0x80;
-			left_wheel = speed_select(2) & 0x40;
-			PORTD |= right_wheel;
-			PORTD |= left_wheel;
-		}
-		
-		for (int i = 0; i < 999999; ++i)
-		{
-			PORTD = 0x00;
-			PORTD = 0x00;
-		}
-		
-		south();
-		for (int i = 0; i < 999999; ++i)
-		{
-			right_wheel = speed_select(3) & 0x80;
-			left_wheel = speed_select(3) & 0x40;
-			PORTD |= right_wheel;
-			PORTD |= left_wheel;
-		}
-		
-		for (int i = 0; i < 999999; ++i)
-		{
-			PORTD = 0x00;
-			PORTD = 0x00;
-		}
-		*/
+		drive();
 	}
 }
