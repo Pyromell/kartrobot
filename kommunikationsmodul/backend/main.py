@@ -32,6 +32,8 @@ mapPosition: tuple[int, int] = (37, 37)
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
+interface_ready_for_data = False
+
 
 driver_ttyUSB = serial.Serial(
     port='/dev/ttyUSB0',
@@ -71,10 +73,10 @@ def uart_recv(ttyUSB) -> bytes:
 
 # NOTE: Blocks for 0.2 second trying to read data
 def get_interface_data(conn) -> int:
-    ready = select.select([conn], [conn], [], 0.01)
+    ready = select.select([conn], [], [], 0.01)
     try:
         if ready[0]:
-            data = conn.recv(3)
+            data = conn.recv(64)
             if len(data) == 0:
                 print('Disconnected')
                 return -1
@@ -122,10 +124,16 @@ def update_map(sensorData: list[int]) -> None:
 
 
 def send_sensor_data_to_interface(conn, sensorData) -> bool:
+    global interface_ready_for_data
     pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
     pp(len(pickled_data))
     try:
-        conn.send(pickled_data)
+        ready = select.select([], [conn], [], 0.01)
+        print(interface_ready_for_data)
+        if interface_ready_for_data and ready[1]:
+            print("SENDING ALL")
+            conn.sendall(pickled_data)
+            interface_ready_for_data = False
     except ConnectionResetError:
         print("WARN: Connection reset")
         return False
@@ -133,34 +141,38 @@ def send_sensor_data_to_interface(conn, sensorData) -> bool:
 
 
 def main() -> int:
+    global interface_ready_for_data
     try:
         while True:
             conn, address = client_socket.accept()
+            interface_ready_for_data = True
             print('Got new connection')
             while True:
                  interfaceCommand = get_interface_data(conn)
                  match interfaceCommand:
                      case 0:
                          print('sending Start/Stop!')
-                         uart_send(driver_ttyUSB, (0).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (0).to_bytes(8, 'big'))
                      case 1:
                          print('sending fram')
-                         uart_send(driver_ttyUSB, (1).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (1).to_bytes(8, 'big'))
                      case 2:
                          print('sending back')
-                         uart_send(driver_ttyUSB, (2).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (2).to_bytes(8, 'big'))
                      case 3:
                          print('sending svang höger')
-                         uart_send(driver_ttyUSB, (3).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (3).to_bytes(8, 'big'))
                      case 4:
                          print('sending svang vänster')
-                         uart_send(driver_ttyUSB, (4).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (4).to_bytes(8, 'big'))
                      case 5:
                          print('sending manuell / autonom')
-                         uart_send(driver_ttyUSB, (5).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (5).to_bytes(8, 'big'))
                      case 6:
                          print('sending manuell / autonom')
-                         uart_send(driver_ttyUSB, (6).to_bytes(3, 'big'))
+                         uart_send(driver_ttyUSB, (6).to_bytes(8, 'big'))
+                     case 255:
+                         interface_ready_for_data = True
                      case -1:
                          print("Broken network connection")
                          break
