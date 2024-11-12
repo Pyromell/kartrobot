@@ -39,15 +39,15 @@ driver_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.2,
+    timeout=0.01,
 )
 sensor_ttyUSB = serial.Serial(
-    port='/dev/ttyUSB0',
+    port='/dev/ttyUSB1',
     baudrate=9600,
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.2,
+    timeout=0.01,
 )
 
 try:
@@ -71,13 +71,17 @@ def uart_recv(ttyUSB) -> bytes:
 
 # NOTE: Blocks for 0.2 second trying to read data
 def get_interface_data(conn) -> int:
-    ready = select.select([conn], [], [], 0.2)
-    if ready[0]:
-        data = conn.recv(3)
-        if len(data) == 0:
-            print('Disconnected')
-            return -1
-        return int.from_bytes(data, 'big')
+    ready = select.select([conn], [conn], [], 0.01)
+    try:
+        if ready[0]:
+            data = conn.recv(3)
+            if len(data) == 0:
+                print('Disconnected')
+                return -1
+            return int.from_bytes(data, 'big')
+    except select.error:
+        print("DISCONNECTED")
+        sys.exit(1)
 
 # NOTE: Blocks for 0.2 second to get driver data
 def get_driver_data() -> bool:
@@ -91,8 +95,7 @@ def get_sensor_data() -> list[int] | None:
     read_buf = uart_recv(sensor_ttyUSB)
     if read_buf:
         print("read " + str(len(read_buf)) + " amount of bytes from SENSOR")
-        # TODO: Convert to list[int]
-        return read_buf
+        # TODO: Convert to list[int] return read_buf
     return None
 
 # NOTE: Blocks for 0.2 second to get sensor data
@@ -118,59 +121,69 @@ def update_map(sensorData: list[int]) -> None:
     return []
 
 
-def send_sensor_data_to_interface(conn, sensorData) -> None:
-    conn.send(pickle.dumps(sensorData))
+def send_sensor_data_to_interface(conn, sensorData) -> bool:
+    pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
+    pp(len(pickled_data))
+    try:
+        conn.send(pickled_data)
+    except ConnectionResetError:
+        print("WARN: Connection reset")
+        return False
+    return True
 
 
 def main() -> int:
     try:
-        conn, address = client_socket.accept()
-        print('Got new connection')
-        conn.setblocking(0)
         while True:
-            interfaceCommand = get_interface_data(conn)
-            match interfaceCommand:
-                case 0:
-                    print('sending Start/Stop!')
-                    uart_send(driver_ttyUSB, (0).to_bytes(3, 'big'))
-                case 1:
-                    print('sending fram')
-                    uart_send(driver_ttyUSB, (1).to_bytes(3, 'big'))
-                case 2:
-                    print('sending back')
-                    uart_send(driver_ttyUSB, (2).to_bytes(3, 'big'))
-                case 3:
-                    print('sending svang höger')
-                    uart_send(driver_ttyUSB, (3).to_bytes(3, 'big'))
-                case 4:
-                    print('sending svang vänster')
-                    uart_send(driver_ttyUSB, (4).to_bytes(3, 'big'))
-                case 5:
-                    print('sending manuell / autonom')
-                    uart_send(driver_ttyUSB, (5).to_bytes(3, 'big'))
-                case 6:
-                    print('sending manuell / autonom')
-                    uart_send(driver_ttyUSB, (6).to_bytes(3, 'big'))
-                case -1:
-                    print("Broken network connection")
-                    break
-            driverReady = get_driver_data()
-            sensorData = get_sensor_data()
-            if driverReady:
-                sensorData = [
-                    51,
-                    10,
-                    123092,
-                    58,
-                ]
-                if sensorData:
-                    update_map(sensorData)
-                    # for i, v in enumerate(mapData):
-                    #     pp(i)
-                    #     pp([{num: value} for num, value in enumerate(v)], width=20)
-                    break
-            elif sensorData:
-                send_sensor_data_to_interface(conn, sensorData)
+            conn, address = client_socket.accept()
+            print('Got new connection')
+            while True:
+                 interfaceCommand = get_interface_data(conn)
+                 match interfaceCommand:
+                     case 0:
+                         print('sending Start/Stop!')
+                         uart_send(driver_ttyUSB, (0).to_bytes(3, 'big'))
+                     case 1:
+                         print('sending fram')
+                         uart_send(driver_ttyUSB, (1).to_bytes(3, 'big'))
+                     case 2:
+                         print('sending back')
+                         uart_send(driver_ttyUSB, (2).to_bytes(3, 'big'))
+                     case 3:
+                         print('sending svang höger')
+                         uart_send(driver_ttyUSB, (3).to_bytes(3, 'big'))
+                     case 4:
+                         print('sending svang vänster')
+                         uart_send(driver_ttyUSB, (4).to_bytes(3, 'big'))
+                     case 5:
+                         print('sending manuell / autonom')
+                         uart_send(driver_ttyUSB, (5).to_bytes(3, 'big'))
+                     case 6:
+                         print('sending manuell / autonom')
+                         uart_send(driver_ttyUSB, (6).to_bytes(3, 'big'))
+                     case -1:
+                         print("Broken network connection")
+                         break
+                 driverReady = get_driver_data()
+                 sensorData = get_sensor_data()
+                 if driverReady:
+                     sensorData = [
+                         51,
+                         10,
+                         123092,
+                         58,
+                     ]
+                     if sensorData:
+                         update_map(sensorData)
+                         # for i, v in enumerate(mapData):
+                         #     pp(i)
+                         #     pp([{num: value} for num, value in enumerate(v)], width=20)
+                         print("Sending sensor data 1")
+                         if not send_sensor_data_to_interface(conn, [1, 2, 3, 4]):
+                             break
+                 elif sensorData:
+                     print("Sending sensor data 2")
+                     send_sensor_data_to_interface(conn, sensorData)
     except KeyboardInterrupt:
         if sensor_ttyUSB.is_open:
             sensor_ttyUSB.close()
@@ -181,3 +194,4 @@ def main() -> int:
 
 if __name__ == '__main__':
     sys.exit(main())
+
