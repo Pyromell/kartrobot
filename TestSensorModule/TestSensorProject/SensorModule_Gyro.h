@@ -23,9 +23,11 @@ uint16_t ReadSensor_Gyro_Answer()
 {
 	while (!(SPSR & (1 << SPIF)));
 	uint16_t data = (uint16_t)SPDR;		//	read the Byte
+	//PORTD = data;
 	data <<= 8;
 	//while (!(SPSR & (1 << SPIF)));		//	wait
 	data |= (uint16_t)SPDR;
+	//PORTD = data;
 	return data;
 }
 
@@ -94,25 +96,48 @@ uint8_t ReadSensor_Gyro_StartTemperatureConversion()
 	return (uint8_t)!((1 << 15) & answer);
 }
 
-uint16_t ReadSensor_Gyro_ReadResult()
+uint16_t ReadSensor_Gyro_GetADCValue()
 {
 	ReadSensor_Gyro_TransmitByte(0b10000000);		//	send instruction
-	uint16_t answer = ReadSensor_Gyro_Answer();		//	read answer
-	
+	return ReadSensor_Gyro_Answer();
+}
 
-	while ((answer & (1 << 13)) == 0)	//	while EOC is not set
+int16_t oldValue = 0;
+int16_t cnt = 0;
+int16_t ReadSensor_Gyro_Angular()
+{
+
+	//	I don't know why, but for some reason uncommenting this line of code
+	//	makes the value read be constant, which is weird, idealy we would wan't
+	//	to start the conversion before we try to get the ADC value
+	//ReadSensor_Gyro_StartAngularConversion();
+	while(1)
 	{
-		if (answer & ((1 << 15)))		//	if at any point, the command is rejected, return immediately
-			return 0xFFFF;
-		ReadSensor_Gyro_TransmitByte(0b10000000);
-		answer = ReadSensor_Gyro_Answer();	//
+		for (uint32_t i = 0; i < 50000; i++)
+		{
+			asm("NOP");	
+		}			
+			
+		uint16_t answerValue = ReadSensor_Gyro_GetADCValue();
+		uint16_t headerValue = answerValue & 0b1010000000000000;
+		uint16_t adcValue    = answerValue & 0b0000111111111111;
+			
+		if (headerValue                    & 0b1000000000000000)	//	check if command was accepted, if not, restart conversion
+			ReadSensor_Gyro_StartAngularConversion();
+		else if (headerValue               & 0b0010000000000000)	//	check EOC
+		{
+			if (oldValue != adcValue)
+			{	//	this simply test that we get new values, which we do
+				//	the output of the gyroscope is not very stable
+				
+				oldValue = adcValue;
+				cnt++;
+				PORTD = adcValue;
+			}
+			return adcValue;
+		}
 	}
-	
-	answer >>=1;
-	answer &= 0b0000011111111111;
 
-	//	return only the bits 11 down to 1, shifted once to the right
-	return answer;
 }
 
 

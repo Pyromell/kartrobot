@@ -23,11 +23,10 @@ int main(void)
 		        
 	while (1)
 	{
-	if (ReadSensor_Gyro_StartAngularConversion())
-		result = ReadSensor_Gyro_ReadResult();
-	PORTD = result;
+		result = ReadSensor_Gyro_Angular();
+		//PORTD = result;
 		//uint16_t distance = ReadSensor_IR();
-		//PORTD = distance;
+
 	}
 }
 
