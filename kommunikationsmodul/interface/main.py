@@ -9,36 +9,43 @@ pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 pi_socket.connect(("10.42.0.1", 8027))
 
 
-class Interface(Frame):
+class Interface():
+
+    def recieve(self):
+        read_buf = pi_socket.recv(1028)
+        print(read_buf)
+        # <++>
+        print(pickle.loads(read_buf))
+        #self.tk.after(1000, self.recieve)
     def __init__(self):
-        self.root = Tk()
+        self.tk = Tk()
         self.buttonStartStop = Button(
-            self.root,
+            self.tk,
             text="Send Start / Stop",
             command=sendStartStop,
         )
         self.buttonForward = Button(
-            self.root,
+            self.tk,
             text="Send Forward",
             command=sendForward,
         )
         self.buttonBack = Button(
-            self.root,
+            self.tk,
             text="Send Manual Toggle",
             command=sendBack,
         )
         self.buttonRight = Button(
-            self.root,
+            self.tk,
             text="Send Right",
             command=sendRight,
         )
         self.buttonLeft = Button(
-            self.root,
+            self.tk,
             text="Send Left",
             command=sendLeft,
         )
         self.buttonManualToggle = Button(
-            self.root,
+            self.tk,
             text="Send Manual Toggle",
             command=sendManualToggle,
         )
@@ -49,19 +56,16 @@ class Interface(Frame):
         self.buttonLeft.pack()
         self.buttonManualToggle.pack()
         self.sensorTextBox = tkinter.Text(
-            self.root,
+            self.tk,
             height=12,
             width=40,
         )
         self.sensorTextBox.pack(expand=True)
         self.recieve()
-        self.root.mainloop()
+        self.tk.mainloop()
 
-        def recieve():
-            read_buf = pi_socket.recv(1028)
-            # <++>
-            pickle.loads(read_buf)
-            self.after(1000, self.recieve)
+
+
 
 
 def sendStartStop():
@@ -86,3 +90,6 @@ def sendLeft():
 
 def sendManualToggle():
     pi_socket.send((5).to_bytes(3, 'big'))
+
+
+interFace = Interface()
