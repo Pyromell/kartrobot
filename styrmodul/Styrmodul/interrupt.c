@@ -14,8 +14,7 @@ Pin Description:
   
 ***********************************/
 
-
-//This functions receives UART instr on UART0
+// This functions receives UART instr on UART0
 // The ISR sends an 'U' to indicate that the data was received
 ISR(USART0_RX) {
 	// Receive instruction data

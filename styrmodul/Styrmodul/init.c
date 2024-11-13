@@ -10,17 +10,19 @@ void PWM_init(void) {
 	1: clk I/O /8 (From prescaler)
 	2: clk I/O /64 (From prescaler)
 	3: clk I/O /256 (From prescaler)
+	
+	All PWM couters are from 0x00 -> 0xFF
 	*/
 	
-	TCCR0A	= 0x03; // Fast PWM, From 0x00 -> 0xFF
+	TCCR0A	= 0x03;
 	TCCR0B	= 0x01;
 	
-	TCCR1A	= 0x03; // Fast PWM, From 0x00 -> 0xFF
+	TCCR1A	= 0x03;
 	TCCR1B	= 0x02;
 	
-	TCCR2A	= 0x03; // Fast PWM, From 0x00 -> 0xFF
+	TCCR2A	= 0x03;
 	TCCR2B	= 0x03;
 	
-	TCCR3A	= 0x03; // Fast PWM, From 0x00 -> 0xFF
+	TCCR3A	= 0x03;
 	TCCR3B	= 0x04;
 }

@@ -12,8 +12,9 @@ uint8_t wheel_marker_l = 0; // One cog index is one white 'marker' on the wheel
 uint8_t wheel_marker_r = 0; 
 
 uint16_t ir_data[6];
-uint16_t gyro_data;
+uint16_t gyro_data = 0;
 
+uint64_t counter = 0;
 /***********************************
 Program Description:
 	The main file.
@@ -25,8 +26,8 @@ Pin Description:
 	
 	Pin 18 DIR1 (Direction for left track)
 	Pin 19 DIR2 (Direction for right track)
-	Pin 20 PWM1 ("Speed" of left track)
-	Pin 21 PWM2 ("Speed" of right track)
+	Pin 20 PWM1 ("Speed" for left track)
+	Pin 21 PWM2 ("Speed" for right track)
   
 ***********************************/
 
@@ -35,24 +36,11 @@ int main(void)
   PORT_init();
   PWM_init();
   UART_Init();
-  sei();
+  //sei();
   
   while(1)
   {
-    for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			UART_Transmit('N');
-    for (int j = 0; j < 99; ++j)
-		for (int i = 0; i < 9999; ++i)
-			UART_Transmit('X');
-
-    for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			UART_Transmit('S');
-
-    for (int j = 0; j < 99; ++j)
-		for (int i = 0; i < 9999; ++i)
-			UART_Transmit('X');
+    PORTB = UART_Receive();
   }
 }
 
@@ -66,87 +54,45 @@ int main(void)
 	X: Stop
 ***********************************/
 
+/* SEND
 
-/* rec 2
-int main(void)
+drive_instr = UART_Receive();
+if(drive_instr == 'N')
 {
-  PORT_init();
-  PWM_init();
-  UART_Init();
-  sei();
-  
-  while(1)
-  {
-    drive(drive_instr);
-  }
+  PORTB = drive_instr;
+  drive_instr = 0x00;
 }
-*/
-
-/* send 2
-int main(void)
-{
-  PORT_init();
-  PWM_init();
-  UART_Init();
-  sei();
-  
-  while(1)
-  {
-    for (int j = 0; j < 30; ++j)
-    for (int i = 0; i < 9999; ++i)
-    UART_Transmit('N');
-    for (int j = 0; j < 99; ++j)
-    for (int i = 0; i < 9999; ++i)
-    UART_Transmit('X');
-
-    for (int j = 0; j < 30; ++j)
-    for (int i = 0; i < 9999; ++i)
-    UART_Transmit('S');
-
-    for (int j = 0; j < 99; ++j)
-    for (int i = 0; i < 9999; ++i)
-    UART_Transmit('X');
-  }
-}
-*/
 
 
-/* rec
-int main(void)
-{
-  PORT_init();
-  PWM_init();
-  UART_Init();
-  
-  sei();
-  uint8_t distance = 0;
-  
-  while(1)
-  {
-    if(drive_instr != 'X')
-    drive_test();
-    else
-    {
-      stop();
-      PORTB = drive_instr;
-    }
-  }
-}
-*/
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('N');
+    for(volatile int i = 0; i < 2000; ++i)
+      asm("NOP");
 
-/* send
-int main(void)
-{
-  PORT_init();
-  PWM_init();
-  UART_Init();
-  
-  sei();
-  uint8_t distance = 0;
-  
-  while(1)
-  {
-    UART_Transmit('X');
-  }
-}
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('X');
+    for(volatile int i = 0; i < 2000; ++i)
+      asm("NOP");
+    
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('S');
+    for(volatile int i = 0; i < 2000; ++i)
+      asm("NOP");
+
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('X');
+    for(volatile int i = 0; i < 2000; ++i)
+      asm("NOP");
+
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('N');
+
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('X');
+
+    for(volatile int i = 0; i < 6000; ++i)
+     UART_Transmit('S');
+
+    for(volatile int i = 0; i < 6000; ++i)
+      UART_Transmit('X');
 */

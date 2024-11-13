@@ -59,17 +59,18 @@ void stop()
 	X: Stop
 ***********************************/
 
-void drive(const uint8_t* drive_instr)
+void drive(const uint8_t* drive_instr, const uint8_t* speed_left, const uint8_t* speed_right)
 {
   cli();
+  UART_Transmit_Instr_Received();
   switch(*drive_instr)
   {
-    case 'N': north(1,1); break;
-    case 'S': south(1,1); break;
-    case 'W': west(1,1); break;
-    case 'E': east(1,1); break;
+    case 'N': north(*speed_left, *speed_right); break;
+    case 'S': south(*speed_left, *speed_right); break;
+    case 'W': west(*speed_left, *speed_right); break;
+    case 'E': east(*speed_left, *speed_right); break;
     case 'X': stop(); break;
-    default: stop(); break; //FAILSAFE
+    default: stop(); break;
   }
   UART_Transmit_Instr_Done();
   sei();
