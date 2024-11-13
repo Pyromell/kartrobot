@@ -1,7 +1,7 @@
 void PORT_init(void) {
 	// low inits UART, high intis Wrooom
 	DDRD	= 0xFA;	
-	DDRB	= 0xFF;
+	//DDRB	= 0xFF;
 }
 void PWM_init(void) {
 	// inits PWM interrupt

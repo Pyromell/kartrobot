@@ -40,27 +40,45 @@ unsigned char UART_Receive(void) {
 	return UDR0;
 }
 
-void UART_Transmit(const unsigned char* data) {
+void UART_Transmit_C(const unsigned char data) {
 	// wait for empty transmit buffer
 	while ( !(UCSR0A & (1 << UDRE0)) ) ;
-
+	
+	//for(int i = 0; i < 99; ++i)
+	//	asm("NOP");
+	
 	// put data into buffer
 	UDR0 = data;
 
-  // wait for the hardware to set its done flag
-  while(TXC0 == 1) ;
+	// wait for the hardware to set its done flag
+	while(TXC0 == 1) ;
+}
 
-  for(int i = 0; i < 19; ++i)
-    asm("NOP");
+void UART_Transmit_S(const unsigned char data) {
+	// wait for empty transmit buffer
+	while ( !(UCSR1A & (1 << UDRE1)) ) ;
+
+	// put data into buffer
+	UDR1 = data;
+
+	// wait for the hardware to set its done flag
+	while(TXC1 == 1) ;
+}
+
+void UART_Transmit_Choice(const char choice, const unsigned char data) {
+	if(choice == 'C')
+		UART_Transmit_S(data);
+	else if(choice == 'S')
+		UART_Transmit_C(data);
 }
 
 // This function sends a 'R' for RECEIVED over UART0
-// This should be called each time we recive a drive instr to indicate to
+// This should be called each time we receive a drive instr. to indicate to
 // the communication module that the drive module is currently doing a drive
 // function.
 void UART_Transmit_Instr_Received()
 {
-	UART_Transmit('R');
+	UART_Transmit_C('R');
 }
 
 // This function sends a 'D' for DONE over UART0
@@ -68,6 +86,5 @@ void UART_Transmit_Instr_Received()
 // communication module that the drive module is ready for a new drive instr
 void UART_Transmit_Instr_Done()
 {
-	UART_Transmit('D');
+	UART_Transmit_C('D');
 }
-
