@@ -104,6 +104,7 @@ void drive_test()
 uint32_t TEMP_COUNTER = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 uint32_t TEMP_COUNTER_2 = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 
+// Drive 40 cm forward
 void drive_40_cm()
 {
 	//UART_Transmit_S(''); // Starting movement
@@ -122,6 +123,7 @@ void drive_40_cm()
 	//UART_Transmit_S(''); // Movement done
 }
 
+// Perform a 90 degrees turn in the specified direction
 void drive_turn(char dir)
 {
 	if(dir == 'R')
@@ -160,6 +162,9 @@ void drive_turn(char dir)
 	}
 }
 
+// Drive 40 cm in the direction specified by dir.
+// Ex: If drive_40_cm_dir('W') is called
+// The robot will turn left (90 degrees) and then drive 40 cm
 void drive_40_cm_dir(char dir)
 {
 	switch (dir)

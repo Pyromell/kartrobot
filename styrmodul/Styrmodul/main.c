@@ -15,7 +15,7 @@ uint64_t counter = 0;
 #include "init.c"
 #include "drive_functions.c"
 #include "uart.c"
-
+#include "control_sys.c"
 
 /***********************************
 Program Description:
@@ -44,9 +44,6 @@ int main(void)
   
   while(1)
   {
-	  
-	  drive('N',6,6);
-	  /*
 		drive_turn('L');
 		drive_turn('L');
 		drive_turn('L');
