@@ -1,31 +1,39 @@
 #pragma once
 #include <stdbool.h>
 
-// ir_data index
-#define Sen_F 0
-#define Sen_B 1
-#define Sen_LF 2
-#define Sen_LB 3
-#define Sen_RF 4
-#define Sen_RB 5
+// ir_data index 0-6
+enum ir_data_index {
+	Sen_F,
+	Sen_B,
+	Sen_LF,
+	Sen_LB,
+	Sen_RF,
+	Sen_RB
+};
 
-// walls & wall_relation & wall_angle index
-#define Wall_F 0
-#define Wall_B 1
-#define Wall_L 2
-#define Wall_R 3
+// walls & wall_relation & wall_angle index 0-3
+enum wall_index {
+	Wall_F,
+	Wall_B,
+	Wall_L,
+	Wall_R
+};
 
 // wall_relation values
-#define close 0
-#define good 1
-#define far 2
-#define invalid 3
+enum wall_relation_values {
+	close,
+	good,
+	far,
+	invalid
+};
 
 // wall_angle values
-#define parallel 0
-#define into 1
-#define away 2
-#define invalid 3
+enum wall_angle_values {
+	parallel,
+	into,
+	away
+	//invalid
+};
 
 uint16_t ir_data[6] = {0,0,0,0,0,0};
 
@@ -57,37 +65,23 @@ bool ir_data_validation(uint16_t data)
 {
 	uint16_t min_val = 0x0000;
 	uint16_t max_val = 0xFFFF;
-	if(data > min_val && data < max_val)
-		return true;
-	return false;
+	return (data > min_val && data < max_val);
 }
 
 // Function that evaluates if ir_data have detected a wall
 void evaluate_walls()
 {
 	// Front wall
-	if (ir_data_validation(ir_data[Sen_F]))
-		walls[Wall_F] = 1;
-	else
-		walls[Wall_F] = 0;
+	walls[Wall_F] = ir_data_validation(ir_data[Sen_F]);
 	
 	// Back wall
-	if (ir_data_validation(ir_data[Sen_B]))
-		walls[Wall_B] = 1;
-	else
-		walls[Wall_B] = 0;
+	walls[Wall_B] = ir_data_validation(ir_data[Sen_B]);
 	
 	// Left wall
-	if (ir_data_validation(ir_data[Sen_LF]) || ir_data_validation(ir_data[Sen_LB]))
-		walls[Wall_L] = 1;
-	else
-		walls[Wall_L] = 0;
+	walls[Wall_L] = ir_data_validation(ir_data[Sen_LF]) || ir_data_validation(ir_data[Sen_LB]);
 	
 	// Right wall
-	if (ir_data_validation(ir_data[Sen_RF]) || ir_data_validation(ir_data[Sen_RB]))
-		walls[Wall_R] = 1;
-	else
-		walls[Wall_R] = 0;
+	walls[Wall_R] = ir_data_validation(ir_data[Sen_RF]) || ir_data_validation(ir_data[Sen_RB]);
 }
 
 // Detect if the robot is too far away, good distance, or too close to the wall
@@ -100,64 +94,56 @@ void dist_to_wall()
 	uint16_t distance_405mm = 405;	
 
 	// Front wall
-	if (walls[Wall_F] && ir_data[Sen_F] > distance_400mm )
+	wall_relation[Wall_F] = invalid;
+	if (ir_data[Sen_F] > distance_405mm) {
 		// Far away
 		wall_relation[Wall_F] = far;
-	else if (walls[Wall_F] && ( distance_395mm < ir_data[Sen_F] && ir_data[Sen_F] < distance_405mm ))
-		// Good distance
-		wall_relation[Wall_F] = good;
-	else if (walls[Wall_F] && ir_data[Sen_F] < distance_400mm )
+	} else if (ir_data[Sen_F] < distance_395mm ) {
 		// Too close
 		wall_relation[Wall_F] = close;
-	else if (!walls[Wall_F])
-		// No wall
-		wall_relation[Wall_F] = invalid;
+	} else {
+		// Good distance
+		wall_relation[Wall_F] = good;
+	}
 		
 	// Back wall
-	if (walls[Wall_B] && ir_data[Sen_B] > distance_400mm )
+	wall_relation[Wall_B] = invalid;
+	if (ir_data[Sen_B] > distance_405mm) {
 		// Far away
 		wall_relation[Wall_B] = far;
-	else if (walls[Wall_B] && ( distance_395mm < ir_data[Sen_B] && ir_data[Sen_B] < distance_405mm ))
-		// Good distance
-		wall_relation[Wall_B] = good;
-	else if (walls[Wall_B] && ir_data[Sen_B] < distance_400mm )
+	} else if (ir_data[Sen_B] < distance_395mm ) {
 		// Too close
 		wall_relation[Wall_B] = close;
-	else if (!walls[Wall_B])
-		// No wall
-		wall_relation[Wall_B] = invalid;
+	} else {
+		// Good distance
+		wall_relation[Wall_B] = good;
+	}
 	
 	// Left wall
-	if (walls[Wall_L] && ir_data[Sen_LF] > distance_400mm && ir_data[Sen_LB] > distance_400mm )
+	wall_relation[Wall_L] = invalid;
+	if (ir_data[Sen_LF] > distance_405mm && ir_data[Sen_LB] > distance_405mm) {
 		// Far away
 		wall_relation[Wall_L] = far;
-	else if (walls[Wall_L] &&
-		distance_395mm < ir_data[Sen_LF] && distance_395mm < ir_data[Sen_LB] &&
-		ir_data[Sen_LF] < distance_405mm && ir_data[Sen_LB] < distance_405mm )
-		// Good distance
-		wall_relation[Wall_L] = good;
-	else if (walls[Wall_L] && ir_data[Sen_LF] < distance_400mm && ir_data[Sen_LB] < distance_400mm )
+	} else if (ir_data[Sen_LF] < distance_395mm && ir_data[Sen_LB] < distance_395mm) {
 		// Too close
 		wall_relation[Wall_L] = close;
-	else if (!walls[Wall_L])
-		// No wall
-		wall_relation[Wall_L] = invalid;
+	} else {
+		// Good distance
+		wall_relation[Wall_L] = good;
+	}
 		
 	// Right wall
-	if (walls[Wall_R] && ir_data[Sen_RF] > distance_400mm && ir_data[Sen_RB] > distance_400mm )
+	wall_relation[Wall_R] = invalid;
+	if (ir_data[Sen_RF] > distance_405mm && ir_data[Sen_RB] > distance_405mm) {
 		// Far away
 		wall_relation[Wall_R] = far;
-	else if (walls[Wall_R] &&
-		distance_395mm < ir_data[Sen_RF] && distance_395mm < ir_data[Sen_RB] &&
-		ir_data[Sen_RF] < distance_405mm && ir_data[Sen_RB] < distance_405mm )
-		// Good distance
-		wall_relation[Wall_R] = good;
-	else if (walls[Wall_R] && ir_data[Sen_RF] < distance_400mm && ir_data[Sen_RB] < distance_400mm )
+	} else if (ir_data[Sen_RF] < distance_395mm && ir_data[Sen_RB] < distance_395mm) {
 		// Too close
 		wall_relation[Wall_R] = close;
-	else if (!walls[Wall_R])
-		// No wall
-		wall_relation[Wall_R] = invalid;
+	} else {
+		// Good distance
+		wall_relation[Wall_R] = good;
+	}
 }
 
 // See end of file for ascii drawings for the different scenarios
@@ -206,6 +192,12 @@ void angle_to_wall()
 	}
 }
 
+void set_trajectory(const char new_dir, const uint8_t new_left_speed, const uint8_t new_right_speed) {
+	dir = new_dir;
+    speed_left = new_left_speed;
+    speed_right = new_right_speed;
+}
+
 // Calculate where we should go, based on: if there is a wall, our relation and angle to it.
 void calculate_trajectory()
 {
@@ -213,65 +205,38 @@ void calculate_trajectory()
 	{
 		if (wall_relation[Wall_L] == close)
 		{
-			if (wall_angle[Wall_L] == parallel)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 0;
+			if (wall_angle[Wall_L] == parallel) {
+				set_trajectory('N', 1, 0);
 			}
-			else if (wall_angle[Wall_L] == into)
-			{
-				dir = 'E';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == into) {
+				set_trajectory('E', 1, 1);
 			}
-			else if (wall_angle[Wall_L] == away)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == away) {
+				set_trajectory('N', 1, 1);
 			}
 		}
 		else if (wall_relation[Wall_L] == good)
 		{
-			if (wall_angle[Wall_L] == parallel)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 1;
+			if (wall_angle[Wall_L] == parallel) {
+				set_trajectory('N', 1, 1);
 			}
-			else if (wall_angle[Wall_L] == into)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 0;
+			else if (wall_angle[Wall_L] == into) {
+				set_trajectory('N', 1, 0);
 			}
-			else if (wall_angle[Wall_L] == away)
-			{
-				dir = 'N';
-				speed_left = 0;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == away) {
+				set_trajectory('N', 0, 1);
 			}
 		}
 		else if (wall_relation[Wall_L] == far)
 		{
-			if (wall_angle[Wall_L] == parallel)
-			{
-				dir = 'N';
-				speed_left = 0;
-				speed_right = 1;
+			if (wall_angle[Wall_L] == parallel) {
+				set_trajectory('N', 0, 1);
 			}
-			else if (wall_angle[Wall_L] == into)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == into) {
+				set_trajectory('N', 1, 1);
 			}
-			else if (wall_angle[Wall_L] == away)
-			{
-				dir = 'W';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == away) {
+				set_trajectory('W', 1, 1);
 			}
 		}
 	}
@@ -280,65 +245,38 @@ void calculate_trajectory()
 	{
 		if (wall_relation[Wall_R] == close)
 		{
-			if (wall_angle[Wall_R] == parallel)
-			{
-				dir = 'N';
-				speed_left = 0;
-				speed_right = 1;
+			if (wall_angle[Wall_R] == parallel) {
+				set_trajectory('N', 0, 1);
 			}
-			else if (wall_angle[Wall_R] == into)
-			{
-				dir = 'W';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_R] == into) {
+				set_trajectory('W', 1, 1);
 			}
-			else if (wall_angle[Wall_R] == away)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_R] == away) {
+				set_trajectory('N', 1, 1);
 			}
 		}
 		else if (wall_relation[Wall_R] == good)
 		{
-			if (wall_angle[Wall_R] == parallel)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 1;
+			if (wall_angle[Wall_R] == parallel) {
+				set_trajectory('N', 1, 1);
 			}
-			else if (wall_angle[Wall_R] == into)
-			{
-				dir = 'N';
-				speed_left = 0;
-				speed_right = 1;
+			else if (wall_angle[Wall_R] == into) {
+				set_trajectory('N', 0, 1);
 			}
-			else if (wall_angle[Wall_R] == away)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 0;
+			else if (wall_angle[Wall_R] == away) {
+				set_trajectory('N', 1, 0);
 			}
 		}
 		else if (wall_relation[Wall_L] == far)
 		{
-			if (wall_angle[Wall_L] == parallel)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 0;
+			if (wall_angle[Wall_L] == parallel) {
+				set_trajectory('N', 1, 0);
 			}
-			else if (wall_angle[Wall_L] == into)
-			{
-				dir = 'N';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == into) {
+				set_trajectory('N', 1, 1);
 			}
-			else if (wall_angle[Wall_L] == away)
-			{
-				dir = 'E';
-				speed_left = 1;
-				speed_right = 1;
+			else if (wall_angle[Wall_L] == away) {
+				set_trajectory('E', 1, 1);
 			}
 		}
 	}
