@@ -45,7 +45,7 @@ uint16_t ReadSensor_Gyro_ExecuteInstruction(uint8_t instruction)
 	SPDR = 0;
 	while (!(SPSR & (1 << SPIF)));
 	inData = SPDR;
-	PORTD = inData;
+	//PORTD = inData;
 	answer |= inData;
 	
 	ReadSensor_Gyro_Unselect();
@@ -72,6 +72,32 @@ uint8_t SetSensor_Gyro()
 		return 0;
 	else
 		return 1;
+	
+}
+
+//	adc value
+uint16_t ReadSensor_Gyro_Convert_Int(uint16_t adcValue)
+{
+	int32_t value = (adcValue);
+	value *= 300;
+	value /= 1024;
+	value -= 300;
+	return (int16_t)value;	//	--> -300, 0, 300
+
+}
+
+//	adc value 
+float ReadSensor_Gyro_Convert_Float(uint16_t adcValue)
+{
+	
+	int16_t angularRate = adcValue - 1024;
+
+	//	+1024 = +300 °/s						+1.0 = +300 °/s 
+	//	0	  =  0	 °/s			--->		 0.0 =  0	°/s		
+	//	-1024 = -300 °/s						-1.0 = -300 °/s
+	float rotationDegressPerSeconds = ((float)(angularRate) / 1024.0f) * 300.0f;
+
+	return rotationDegressPerSeconds;
 	
 }
 
