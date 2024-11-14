@@ -15,18 +15,15 @@ int main(void)
 	SetSensor_IR_IO();
 	SetSensor_Gyro();
 	              
-	uint16_t result = 3;
+
 	              
 	//	Untested code
-	if (ReadSensor_Gyro_SetActiveMode());
-	
-		        
+	if (ReadSensor_Gyro_SetActiveMode())
+		PORT_SPI = 0xFF;
+       
 	while (1)
 	{
-		result = ReadSensor_Gyro_Angular();
-		//PORTD = result;
-		//uint16_t distance = ReadSensor_IR();
-
+		uint16_t result = ReadSensor_Gyro_Angular();
 	}
 }
 
