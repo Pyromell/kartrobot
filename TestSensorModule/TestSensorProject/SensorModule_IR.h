@@ -7,16 +7,18 @@ void ADC_start()
 	ADCSRA = 0b11000000;
 }
 
-void SetSensor_IR_IO()
+uint8_t SetSensor_IR_IO()
 {
 	PORTA = 0b00010010;
 	DDRA  = 0b00110110;
-	DDRD  = 0b11111111;
 	// bit 7-6 vref, 5 left or right shifted, 4-0 MUX
 	ADMUX = 0b11100000;
 	
 	//bit 7 enable, 6 start conversion, 4 ADC done flag (Read only)
 	ADCSRA =0b10000000;
+	
+	
+	return 1;
 	
 }
 
