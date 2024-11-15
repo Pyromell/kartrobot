@@ -2,12 +2,12 @@
 #define SENSORMODULE_IR_H_
 
 
-void ADC_start()
+void IR_ADC_start()
 {
 	ADCSRA = 0b11000000;
 }
 
-uint8_t SetSensor_IR_IO()
+uint8_t IR_Init()
 {
 	PORTA = 0b00010010;
 	DDRA  = 0b00110110;
@@ -22,7 +22,7 @@ uint8_t SetSensor_IR_IO()
 	
 }
 
-float ReadSensor_IR_ToDistance(uint16_t adcValue)
+float IR_ToDistance(uint16_t adcValue)
 {
 	float v_out = ((float)(adcValue)/1023.0)*5;
 	
@@ -31,7 +31,7 @@ float ReadSensor_IR_ToDistance(uint16_t adcValue)
 }
 
 
-uint16_t ReadSensor_IR_ToDistance_Temp(uint16_t value)
+uint16_t IR_ToDistance_Temp(uint16_t value)
 {
 	if (value < 10) value = 10;
 	return ((67870.0/ (value-3.0))- 40.0);
@@ -39,9 +39,9 @@ uint16_t ReadSensor_IR_ToDistance_Temp(uint16_t value)
 
 
 
-uint16_t ReadSensor_IR()
+uint16_t IR_Read()
 {
-	ADC_start();
+	IR_ADC_start();
 
 	//	0b00010000 & b10000000
 	//	waits until ADC convertion is done,

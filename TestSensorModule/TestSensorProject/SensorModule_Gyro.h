@@ -9,23 +9,23 @@
 #define PIN_SPI_MISO 6
 #define PIN_SPI_SCLK 7
 
-void ReadSensor_Gyro_Select()
+void Gyro_ChipSelect()
 {
 	PORT_SPI &= ~(1 << PIN_SPI_CS);
 }
 
-void ReadSensor_Gyro_Unselect()
+void Gyro_ChipUnselect()
 {
 	PORT_SPI |= (1 << PIN_SPI_CS);
 }
 
-uint16_t ReadSensor_Gyro_ExecuteInstruction(uint8_t instruction)
+uint16_t Gyro_ExecuteInstruction(uint8_t instruction)
 {
 	
 	uint8_t inData = 0;
 	uint16_t answer = 0;
 	
-	ReadSensor_Gyro_Select();
+	Gyro_ChipSelect();
 	
 	//	send instruction and read dummy byte
 	SPDR = instruction;				//	send the instruction code
@@ -48,23 +48,23 @@ uint16_t ReadSensor_Gyro_ExecuteInstruction(uint8_t instruction)
 	//PORTD = inData;
 	answer |= inData;
 	
-	ReadSensor_Gyro_Unselect();
+	Gyro_ChipUnselect();
 	
 	return answer;
 }
 
-uint8_t SetSensor_Gyro()
+uint8_t Gyro_Init()
 {
 
 	//	0b101110000
 	DDR_SPI = (1 << PIN_SPI_SCLK) | (1 <<  PIN_SPI_MOSI) | (0 <<  PIN_SPI_MISO) | (1 <<  PIN_SPI_CS);
-	ReadSensor_Gyro_Select();
+	Gyro_ChipSelect();
 	
 	//	double check the CPOL and CPHA relationship, page 168 for ATMega1284P
 	SPCR = (1 << SPE) | (1 << MSTR) | (0 << DORD) | (0 << CPOL) | (0 << CPHA); //| (1<<SPR1) | (1 << SPR0);
 	
 	
-	uint16_t answer = ReadSensor_Gyro_ExecuteInstruction(0b10010100);
+	uint16_t answer = Gyro_ExecuteInstruction(0b10010100);
 	for (uint32_t i = 0; i < 500; i++)
 		asm("NOP");
 		
@@ -76,7 +76,7 @@ uint8_t SetSensor_Gyro()
 }
 
 //	adc value
-uint16_t ReadSensor_Gyro_Convert_Int(uint16_t adcValue)
+uint16_t Gyro_ADCToInt(uint16_t adcValue)
 {
 	int32_t value = (adcValue);
 	value *= 300;
@@ -87,7 +87,7 @@ uint16_t ReadSensor_Gyro_Convert_Int(uint16_t adcValue)
 }
 
 //	adc value 
-float ReadSensor_Gyro_Convert_Float(uint16_t adcValue)
+float Gyro_ADCToFloat(uint16_t adcValue)
 {
 	
 	int16_t angularRate = adcValue - 1024;
