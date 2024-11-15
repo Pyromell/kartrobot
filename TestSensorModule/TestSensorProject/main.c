@@ -24,28 +24,10 @@ int main(void)
 	
 	while (!errorCode)
 	{
-
-		uint16_t answer;
-		answer = Gyro_ExecuteInstruction(0b10010100);
-		if (~answer & (1 << 15))
-		{
-			for (uint32_t i = 0; i < 500; i++)
-			asm("NOP");
-			answer = Gyro_ExecuteInstruction(0b10000000);
-			answer >>= 1;
-			answer &= 0b0000011111111111; 
-			int16_t deegress = Gyro_ADCToInt(answer);
-			PORTD = deegress;
-			if (deegress < 0)
-			{
-				deegress >>= 8;
-				deegress |= 0b00000010;
-			}
-			else
-				deegress >>= 8;
-			PORTA = deegress;
-			
-		}	
+		int16_t deegress = Gyro_FetchRotation();
+		PORTD = deegress;
+		deegress >>= 8;
+		PORTA = deegress;
 	}
 	
 	PORTD = errorCode;

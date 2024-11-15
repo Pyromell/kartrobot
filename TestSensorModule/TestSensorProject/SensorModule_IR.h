@@ -1,5 +1,5 @@
-#ifndef SENSORMODULE_IR_H_
-#define SENSORMODULE_IR_H_
+#ifndef SENSORMODULE_IR
+#define SENSORMODULE_IR
 
 
 void IR_ADC_start()
