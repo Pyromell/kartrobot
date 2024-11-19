@@ -1,33 +1,41 @@
+#!/bin/env python3
 import socket
 import sys
 import time
 import os
 import select
 import serial
-from enum import Enum
+from enum import IntEnum
 from pprint import pp
+from random import random
+from queue import LifoQueue
 import pickle
 
-class Direction(Enum):
+class Direction(IntEnum):
+    NORTH = 0
     EAST = 1
-    NORTH = 2
+    SOUTH = 2
     WEST = 3
-    SOUTH = 4
 
 currentDirection = Direction.NORTH
 
-class SquareState(Enum):
+class SquareState(IntEnum):
     UNKNOWN = 0
     EMPTY = 1
     WALL = 2
+    ROBOT = 3
+    START = 4
 
 
 mapData: list[list[bytes]] = [
     [SquareState.UNKNOWN for _ in range(75)]
     for _ in range(75)
 ]
+mapData[38][37] = SquareState.START
 
-mapPosition: tuple[int, int] = (37, 37)
+# NOTE: (x, y)
+lastPosition: tuple[int, int] = (37, 37)
+robotPosition: tuple[int, int] = (37, 37)
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -93,44 +101,136 @@ def get_driver_data() -> bool:
     # FIXME
     return True
 
-def get_sensor_data() -> list[int] | None:
-    read_buf = uart_recv(sensor_ttyUSB)
-    if read_buf:
-        print("read " + str(len(read_buf)) + " amount of bytes from SENSOR")
-        # TODO: Convert to list[int] return read_buf
-    return None
+fakeWalls: dict[tuple[int, int], bool] = {
+    (38, 37): True,
+    (39, 36): True,
+    (38, 35): True,
+    (37, 34): True,
+    (38, 33): True,
+    (37, 33): True,
+    (36, 33): True,
+    (35, 33): True,
+    (34, 33): True,
+    (33, 33): True,
+    (32, 33): True,
+    (31, 33): True,
+    (31, 34): True,
+    (31, 35): True,
+    (31, 36): True,
+    (31, 37): True,
+    (31, 38): True,
+    (31, 39): True,
+    (31, 40): True,
+    (32, 40): True,
+    (33, 40): True,
+    (34, 40): True,
+    (35, 40): True,
+    (36, 38): True,
+    (36, 39): True,
+    (37, 38): False, # "ingång"
+    # (37, 38): True,
+    
+    # Köksön
+    (34, 37): True,
+    (33, 37): True,
+    (33, 36): True,
+    (33, 35): True,
+    (34, 35): True,
+
+}
+
+has_printed = False
+
+def get_sensor_data() -> list[int]:
+    global has_printed
+    fakeSensorData = []
+    for d in range(4):
+        for distance in [1, 2]:
+            delta = (0, 0)
+            direction = Direction(d)
+            match currentDirection:
+                case Direction.NORTH:
+                    delta = [ (0, -1), (1, 0), (0, 1), (-1, 0) ]
+                case Direction.EAST:
+                    delta = [ (1, 0), (0, 1), (-1, 0), (0, -1) ]
+                case Direction.SOUTH:
+                    delta = [ (0, 1), (-1, 0), (0, -1), (1, 0) ]
+                case Direction.WEST:
+                    delta = [ (-1, 0), (0, -1), (1, 0), (0, 1) ]
+            checkPos = tuple(map(lambda t1, t2: t1 + t2 * distance, robotPosition, delta[d]))
+            if not has_printed:
+                print(checkPos)
+            try:
+                if fakeWalls[checkPos]:
+                    fakeSensorData.append(10 + (distance-1)*50 + (random() * 10.0 - 5.0))
+                    break
+            except KeyError:
+                pass
+            if distance == 2:
+                fakeSensorData.append(255)
+    has_printed = True
+    return fakeSensorData
+
+queue: LifoQueue[tuple[int, int]] = LifoQueue()
+visitedSquares: set[tuple[int, int]] = set()
+def pathfind():
+    while not queue.empty():
+        # next_square = queue.pop_back()
+        # lista ut hur åka till next_square
+        # visitedSquares.add(next_square)
+        # skicka kommando
+        # kolla intilligande väggar/empty
+        # lägg till alla empty på queue (om ej i visitedSquares)
+        # for adjacentSquare(nextSquare):
+        #     if not visitedSquares.has(adjacentSquare) and adjacentSquare == SquareState.EMPTY:
+        #         queue.push_back(adjacentSquare)
+        pass
+
+
+#def get_sensor_data() -> list[int] | None:
+#    read_buf = uart_recv(sensor_ttyUSB)
+#    if read_buf:
+#        print("read " + str(len(read_buf)) + " amount of bytes from SENSOR")
+#        # TODO: Convert to list[int] return read_buf
+#    return None
 
 # NOTE: Blocks for 0.2 second to get sensor data
 # Split this up later
 def update_map(sensorData: list[int]) -> None:
+    global currentDirection
     delta = []
     match currentDirection:
-        case Direction.EAST:
-            delta = [ (1, 0), (0, 1), (-1, 0), (0, -1) ]
         case Direction.NORTH:
             delta = [ (0, -1), (1, 0), (0, 1), (-1, 0) ]
-        case Direction.WEST:
-            delta = [ (-1, 0), (0, -1), (1, 0), (0, 1) ]
+        case Direction.EAST:
+            delta = [ (1, 0), (0, 1), (-1, 0), (0, -1) ]
         case Direction.SOUTH:
             delta = [ (0, 1), (-1, 0), (0, -1), (1, 0) ]
+        case Direction.WEST:
+            delta = [ (-1, 0), (0, -1), (1, 0), (0, 1) ]
     for i in range(4):
-        nextPos = tuple(map(lambda x, y: x + y, mapPosition, delta[i]))
-        if 10 <= sensorData[i] <= 50:
+        nextPos = tuple(map(lambda t1, t2: t1 + t2, robotPosition, delta[i]))
+        nextPosX2 = tuple(map(lambda t1, t2: t1 + t2 * 2, robotPosition, delta[i]))
+        if sensorData[i] <= 50:
             mapData[nextPos[1]][nextPos[0]] = SquareState.WALL
-        elif 50 < sensorData[i]:
+        elif 50 < sensorData[i] < 80:
             mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
-
+            mapData[nextPosX2[1]][nextPosX2[0]] = SquareState.WALL
+        else:
+            if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
+                mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
+    # TODO: Don't replace START
+    mapData[lastPosition[1]][lastPosition[0]] = SquareState.EMPTY
+    mapData[robotPosition[1]][robotPosition[0]] = SquareState.ROBOT
     return []
 
 
 def send_sensor_data_to_interface(conn, sensorData) -> bool:
     global interface_ready_for_data
     pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
-    pp(len(pickled_data))
     try:
         ready = select.select([], [conn], [], 0.01)
         if interface_ready_for_data and ready[1]:
-            print("SENDING ALL")
             conn.sendall(pickled_data)
             interface_ready_for_data = False
     except ConnectionResetError:
@@ -140,7 +240,7 @@ def send_sensor_data_to_interface(conn, sensorData) -> bool:
 
 
 def main() -> int:
-    global interface_ready_for_data
+    global interface_ready_for_data, robotPosition, currentDirection
     try:
         while True:
             conn, address = client_socket.accept()
@@ -156,26 +256,44 @@ def main() -> int:
                      case 1:
                          print('sending fram')
                          uart_send(driver_ttyUSB, (1).to_bytes(8, 'big'))
+                         lastPosition = robotPosition
+                         match currentDirection:
+                            case Direction.NORTH:
+                                robotPosition = (robotPosition[0], robotPosition[1] - 1)
+                            case Direction.EAST:
+                                robotPosition = (robotPosition[0] + 1, robotPosition[1])
+                            case Direction.SOUTH:
+                                robotPosition = (robotPosition[0], robotPosition[1] + 1)
+                            case Direction.WEST:
+                                robotPosition = (robotPosition[0] - 1, robotPosition[1])
                          interface_ready_for_data = True
                      case 2:
                          print('sending back')
                          uart_send(driver_ttyUSB, (2).to_bytes(8, 'big'))
+                         lastPosition = robotPosition
+                         match currentDirection:
+                            case Direction.NORTH:
+                                robotPosition = (robotPosition[0], robotPosition[1] + 1)
+                            case Direction.EAST:
+                                robotPosition = (robotPosition[0] - 1, robotPosition[1])
+                            case Direction.SOUTH:
+                                robotPosition = (robotPosition[0], robotPosition[1] - 1)
+                            case Direction.WEST:
+                                robotPosition = (robotPosition[0] + 1, robotPosition[1])
                          interface_ready_for_data = True
                      case 3:
                          print('sending svang höger')
                          uart_send(driver_ttyUSB, (3).to_bytes(8, 'big'))
+                         currentDirection = (int(currentDirection) + 1) % 4
                          interface_ready_for_data = True
                      case 4:
                          print('sending svang vänster')
                          uart_send(driver_ttyUSB, (4).to_bytes(8, 'big'))
+                         currentDirection = (int(currentDirection) + 3) % 4
                          interface_ready_for_data = True
                      case 5:
                          print('sending manuell / autonom')
                          uart_send(driver_ttyUSB, (5).to_bytes(8, 'big'))
-                         interface_ready_for_data = True
-                     case 6:
-                         print('sending manuell / autonom')
-                         uart_send(driver_ttyUSB, (6).to_bytes(8, 'big'))
                          interface_ready_for_data = True
                      case 255:
                          interface_ready_for_data = True
@@ -185,23 +303,9 @@ def main() -> int:
                  driverReady = get_driver_data()
                  sensorData = get_sensor_data()
                  if driverReady:
-                     sensorData = [
-                         51,
-                         10,
-                         123092,
-                         58,
-                     ]
                      if sensorData:
                          update_map(sensorData)
-                         # for i, v in enumerate(mapData):
-                         #     pp(i)
-                         #     pp([{num: value} for num, value in enumerate(v)], width=20)
-                         print("Sending sensor data 1")
-                         if not send_sensor_data_to_interface(conn, sensorData):
-                             break
-                 elif sensorData:
-                     print("Sending sensor data 2")
-                     send_sensor_data_to_interface(conn, sensorData)
+                 send_sensor_data_to_interface(conn, sensorData)
     except KeyboardInterrupt:
         if sensor_ttyUSB.is_open:
             sensor_ttyUSB.close()
