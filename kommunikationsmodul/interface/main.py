@@ -30,12 +30,13 @@ class Interface():
             print(self.buffer)
             try:
                 messageData = pickle.loads(self.buffer)
+                pi_socket.send((255).to_bytes(8, 'big'))
                 self.sensorTextBox.insert(
                     tkinter.END,
                     chars=str(messageData['sensors']),
                 )
             except pickle.UnpicklingError:
-                print("Incomplete message...")
+                print("Incomplete message...", len(self.buffer))
                 self.tk.after(1000, self.recieve)
                 return
             self.buffer = self.buffer[11688:]
@@ -93,32 +94,32 @@ class Interface():
 
 def sendStartStop():
     print("Sending Start / Stop")
-    pi_socket.send((0).to_bytes(3, 'big'))
+    pi_socket.send((0).to_bytes(8, 'big'))
 
 
 def sendForward():
     print("Sending Forward")
-    pi_socket.send((1).to_bytes(3, 'big'))
+    pi_socket.send((1).to_bytes(8, 'big'))
 
 
 def sendBack():
     print("Sending Back")
-    pi_socket.send((2).to_bytes(3, 'big'))
+    pi_socket.send((2).to_bytes(8, 'big'))
 
 
 def sendRight():
     print("Sending Right")
-    pi_socket.send((3).to_bytes(3, 'big'))
+    pi_socket.send((3).to_bytes(8, 'big'))
 
 
 def sendLeft():
     print("Sending Left")
-    pi_socket.send((4).to_bytes(3, 'big'))
+    pi_socket.send((4).to_bytes(8, 'big'))
 
 
 def sendManualToggle():
     print("Sending Manual Toggle")
-    pi_socket.send((5).to_bytes(3, 'big'))
+    pi_socket.send((5).to_bytes(8, 'big'))
 
 
 interFace = Interface()
