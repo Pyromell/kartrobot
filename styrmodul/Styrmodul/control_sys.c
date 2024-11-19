@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 
-// ir_data index 0-6
+// ir_data index 0-5
 enum ir_data_index {
 	Sen_F,
 	Sen_B,
