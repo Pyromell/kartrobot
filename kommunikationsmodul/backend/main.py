@@ -129,7 +129,6 @@ def send_sensor_data_to_interface(conn, sensorData) -> bool:
     pp(len(pickled_data))
     try:
         ready = select.select([], [conn], [], 0.01)
-        print(interface_ready_for_data)
         if interface_ready_for_data and ready[1]:
             print("SENDING ALL")
             conn.sendall(pickled_data)
@@ -153,24 +152,31 @@ def main() -> int:
                      case 0:
                          print('sending Start/Stop!')
                          uart_send(driver_ttyUSB, (0).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 1:
                          print('sending fram')
                          uart_send(driver_ttyUSB, (1).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 2:
                          print('sending back')
                          uart_send(driver_ttyUSB, (2).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 3:
                          print('sending svang höger')
                          uart_send(driver_ttyUSB, (3).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 4:
                          print('sending svang vänster')
                          uart_send(driver_ttyUSB, (4).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 5:
                          print('sending manuell / autonom')
                          uart_send(driver_ttyUSB, (5).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 6:
                          print('sending manuell / autonom')
                          uart_send(driver_ttyUSB, (6).to_bytes(8, 'big'))
+                         interface_ready_for_data = True
                      case 255:
                          interface_ready_for_data = True
                      case -1:
@@ -191,7 +197,7 @@ def main() -> int:
                          #     pp(i)
                          #     pp([{num: value} for num, value in enumerate(v)], width=20)
                          print("Sending sensor data 1")
-                         if not send_sensor_data_to_interface(conn, [1, 2, 3, 4]):
+                         if not send_sensor_data_to_interface(conn, sensorData):
                              break
                  elif sensorData:
                      print("Sending sensor data 2")
