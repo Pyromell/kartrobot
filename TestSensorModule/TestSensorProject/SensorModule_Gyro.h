@@ -64,6 +64,7 @@ uint16_t Gyro_ExecuteInstruction(uint8_t instruction)
 //	adc value
 int16_t Gyro_ADCToInt(uint16_t adcValue)
 {
+	
 	int32_t value = (adcValue);
 	value *= 300;
 	value /= 1024;

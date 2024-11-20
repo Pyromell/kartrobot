@@ -24,7 +24,7 @@ Program Description:
 Pin Description:
 	
 	Pin 14 ISR(USART0_RX) (Receive UART data)
-	Pin 15 ISR(USART0_RX) (Send UART confirmation)
+	Pin 15 ISR(USART0_TX) (Send UART confirmation)
 	Pin 16 ISR(USART1_RX) (Receive UART data)
 	Pin 17 ISR(USART1_TX) (Send UART confirmation) // kolla med arvid
 	
