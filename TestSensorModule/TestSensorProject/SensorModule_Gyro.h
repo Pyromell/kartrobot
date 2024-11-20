@@ -12,14 +12,32 @@
 #define Gyro_CalibrationIterations 20
 #define Gyro_StandingStillValues_Capacity 8
 
+#define Gyro_dataBuffer_length 3
+
 //	global variables
 //		mainly used for calibration
 int16_t  Gyro_standingStillValues[Gyro_StandingStillValues_Capacity];
 uint8_t  Gyro_standingStillValues_length;
 int16_t  Gyro_standingStillAvg;
 
+int16_t Gyro_dataBuffer[Gyro_dataBuffer_length];
+uint16_t Gyro_dataBuffer_readIndex = 0;
+uint16_t Gyro_dataBuffer_writeIndex = 1;
 
+//	store data in the buffer
+void Gyro_WriteValue(int16_t gyroData)
+{	
+	Gyro_dataBuffer[Gyro_dataBuffer_writeIndex] = gyroData;
+	Gyro_dataBuffer_readIndex = Gyro_dataBuffer_writeIndex;
+	if (++Gyro_dataBuffer_writeIndex >= Gyro_dataBuffer_length)
+		Gyro_dataBuffer_writeIndex = 0;
+}
 
+//	read data from the buffer
+uint16_t Gyro_ReadValue()
+{
+	return Gyro_dataBuffer[Gyro_dataBuffer_readIndex];
+}
 
 void Gyro_ChipSelect()
 {
@@ -88,10 +106,11 @@ float Gyro_ADCToFloat(uint16_t adcValue)
 	
 }
 
-int16_t Gyro_FetchRotation()
+//	returns true if successful
+uint8_t Gyro_UpdateBuffer()
 {
-
-	int16_t deegress = 0xFF;
+	
+	uint8_t success = 0;
 	
 	uint16_t answer = Gyro_ExecuteInstruction(0b10010100);
 	if (~answer & (1 << 15))
@@ -101,7 +120,7 @@ int16_t Gyro_FetchRotation()
 		answer = Gyro_ExecuteInstruction(0b10000000);
 		answer >>= 1;
 		answer &= 0b0000011111111111;
-		deegress = Gyro_ADCToInt(answer);
+		int16_t deegress = Gyro_ADCToInt(answer);
 		
 		uint8_t deegressSetToZero = 0;
 		//for (uint8_t i = 0; i < Gyro_standingStillValues_length; i++)
@@ -113,11 +132,14 @@ int16_t Gyro_FetchRotation()
 		
 		if (deegressSetToZero == 0)
 			deegress -= Gyro_standingStillAvg;
-
+			
+		Gyro_WriteValue(deegress);
+		success = 1;
 		
 	}
 	
-	return deegress;
+	return success;
+	
 	
 }
 
@@ -142,7 +164,8 @@ uint8_t Gyro_Calibrate()
 	{
 		
 		//	Fetch one sample
-		int16_t degress = Gyro_FetchRotation();
+		Gyro_UpdateBuffer();
+		int16_t degress = Gyro_ReadValue();
 		if (degress == 0xFF)
 		{
 			//	if instruction rejected, return abort
@@ -188,7 +211,7 @@ uint8_t Gyro_Calibrate()
 	return finishedCalibration;
 }
 
-//	returns true if successfull
+//	returns true if successful
 uint8_t Gyro_Init()
 {
 	

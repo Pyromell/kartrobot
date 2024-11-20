@@ -4,7 +4,7 @@
 #include <float.h>
 #include "SensorModule_Gyro.h"
 #include "SensorModule_IR.h"
-
+#include "uart.h"
 
 
 
@@ -26,7 +26,8 @@ int main(void)
 	
 	while (!errorCode)
 	{
-		int16_t deegress = Gyro_FetchRotation();
+		Gyro_UpdateBuffer();
+		int16_t deegress = Gyro_ReadValue();
 		unsigned char data = UART_Receive_Sen();
 		if (data == 'R')
 			UART_Transmit_Sen('D');
