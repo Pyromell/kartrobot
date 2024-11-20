@@ -16,7 +16,7 @@ Pin Description:
 
 // This functions receives UART instr on UART0
 // The ISR sends an 'U' to indicate that the data was received
-/*
+
 ISR(USART0_RX_vector) {
 	
 	// Receive instruction data
@@ -32,7 +32,7 @@ ISR(USART0_RX_vector) {
 	UDR0 = 'U';
 	
 }
-*/
+
 ISR(TIMER3_COMPA_vect) {
 	PORTB = 0xAA;
 }

@@ -101,6 +101,63 @@ void drive_test()
 	sei();
 }
 
+void some_kind_of_test_drive()
+{
+    drive_turn('L');
+		drive_turn('L');
+		drive_turn('L');
+		drive_turn('L');
+		
+		drive_40_cm_dir('N');		
+		cli();
+		for (volatile int j = 0; j < 30; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+				drive('X', 1, 1);
+		sei();
+	
+		drive_40_cm_dir('W');
+		cli();
+		for (volatile int j = 0; j < 30; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+				drive('X', 1, 1);
+		sei();
+		
+		drive_40_cm_dir('E');
+		cli();
+		for (volatile int j = 0; j < 40; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+				drive('X', 1, 1);
+		sei();
+		drive_40_cm_dir('E');
+		cli();
+		for (volatile int j = 0; j < 30; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+				drive('X', 1, 1);
+		sei();
+		
+		drive_40_cm_dir('E');
+		cli();
+		for (volatile int j = 0; j < 30; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+				drive('X', 1, 1);
+		sei();
+		
+		drive_40_cm_dir('N');
+		cli();
+		for (volatile int j = 0; j < 30; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+				drive('X', 1, 1);
+		sei();
+		
+		drive_turn('L');
+		drive_turn('L');
+		cli();
+		for (volatile int j = 0; j < 30; ++j)
+		  for (volatile int i = 0; i < 9999; ++i)
+		    drive('X', 1, 1);
+		sei();
+}
+
 uint32_t TEMP_COUNTER = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 uint32_t TEMP_COUNTER_2 = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 
