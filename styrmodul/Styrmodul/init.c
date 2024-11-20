@@ -1,7 +1,7 @@
 void PORT_init(void) {
 	// low inits UART, high intis Wrooom
 	DDRD	= 0xFA;	
-	DDRB	= 0xFF;  // INT2 is in use
+	DDRB	= 0xFF; 
 }
 void PWM_init(void) {
 	// inits PWM interrupt
@@ -23,34 +23,25 @@ void PWM_init(void) {
 	TCCR2A	= 0x03;
 	TCCR2B	= 0x03;
 	
-	TCCR3B |= (1 << WGM32);
-	TIMSK3 |= (1 << OCIE3A);
-	//sei();
-	OCR3A = 512;
-	TCCR3B |= ((1 << CS30) | (1 << CS31));
 	
-	
-	//TCNT3 = 0x00;
-	//TCCR3A = 0x00; //Clear OCnA on Compare Match, clear OCnA at BOTTOM (inverting mode)
-	//TCCR3A = (1 << WGM31)
-	//TCCR3B = (1 << WGM32); //CTC
-
-	//OCR3A = 128;
-
-	//TIMSK3 = (1 << OCIE3A);
-
-
 	/*
-	TCCR3A = (1 << COM3A1) | (1 << WGM30);  // Non-inverted PWM on OC3A, Fast PWM mode
-	TCCR3B = (1 << WGM32);// | (1 << CS31);    // Fast PWM mode, prescaler = 8
-	TCCR3B |= 0x05;
-	// Set the OCR3A value for the PWM duty cycle (example)
-	OCR3A = 128;  // Set the compare match value for PWM (50% duty cycle for 8-bit)
-
-	// Enable the interrupt for compare match A (OCR3A)
-	TIMSK3 = (1 << OCIE3A);
+	Timer Interrupt for control_sys
+	Description for interrupt:
+		The interrupt is triggered every 10ms (actually 9.98ms), with some exceptions.
+		If an exception occurs (like another interrupt is active), then the
+		next interrupt is triggered on the next 10ms, thus effectively skipping
+		one interrupt.
+		
+	Setup for interrupt timer:
+		Waveform Generation Mode = Reserved (WGM32)
+		Clock prescale = clk I/O clk/8 (CS31)
+		Interrupt vector = TIMER3_COMPA_vect (OCIE3A)
+		Output Compare Register A = 20400 (OCR3A)
+	*/
+	TCCR3B |= (1 << WGM32);
+	TCCR3B |= (1 << CS31);
 	
-	EICRA = (ISC21 << 1) | (ISC20 << 1);
-	EIMSK |= (1 << INT2);
-*/
+	TIMSK3 |= (1 << OCIE3A);
+	
+	OCR3A = 20400;
 }
