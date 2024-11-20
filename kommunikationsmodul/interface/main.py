@@ -26,10 +26,6 @@ class SquareState(Enum):
 class Interface():
     buffer = b''
     command_queue: Optional[bytes] = None
-    mapGridWindow: list[list[tkinter.Frame]] = [
-        [None for _ in range(75)]
-        for _ in range(75)
-    ]
 
     def recieve(self):
         ready = select.select([pi_socket], [], [], 0.2)
@@ -45,16 +41,29 @@ class Interface():
                     for colnumber, cell in enumerate(row):
                         match cell:
                             case SquareState.UNKNOWN:
-                                self.mapGridWindow[rownumber][colnumber].config(
-                                    bg='grey',
-                                )
+                                pass
+                                # self.canvas.create_rectangle(
+                                #     colnumber * 8,
+                                #     rownumber * 8,
+                                #     (colnumber+1) * 8,
+                                #     (rownumber+1) * 8,
+                                #     fill='grey',
+                                # )
                             case SquareState.EMPTY:
-                                self.mapGridWindow[rownumber][colnumber].config(
-                                    bg='white',
+                                self.canvas.create_rectangle(
+                                    colnumber * 8,
+                                    rownumber * 8,
+                                    (colnumber+1) * 8,
+                                    (rownumber+1) * 8,
+                                    fill='white',
                                 )
                             case SquareState.WALL:
-                                self.mapGridWindow[rownumber][colnumber].config(
-                                    bg='black',
+                                self.canvas.create_rectangle(
+                                    colnumber * 8,
+                                    rownumber * 8,
+                                    (colnumber+1) * 8,
+                                    (rownumber+1) * 8,
+                                    fill='black',
                                 )
                 if self.command_queue:
                     pi_socket.sendall(self.command_queue)
@@ -100,7 +109,6 @@ class Interface():
             self.tk,
             bg='aquamarine',
         )
-        self.buttonFrame.grid(row=0, column=1)
         self.buttonStartStop = Button(
             self.buttonFrame,
             text="Send Start / Stop",
@@ -131,25 +139,20 @@ class Interface():
             text="Send Manual Toggle",
             command=self.sendManualToggle,
         )
-        self.gridFrame = Frame(
-            self.tk,
-            bg='purple',
-            # width=900,
-            # height=900,
-        )
-        self.gridFrame.grid(row=0, column=0)
+        self.canvas = tkinter.Canvas(self.tk, bg='grey', width=600, height=600)
+        for colnumber in range(75):
+            for rownumber in range(75):
+                self.canvas.create_rectangle(
+                    colnumber * 8,
+                    rownumber * 8,
+                    (colnumber+1) * 8,
+                    (rownumber+1) * 8,
+                    fill='grey',
+                )
 
-        for row in range(75):
-            for col in range(75):
-                self.mapGridWindow[row][col] = tkinter.Frame(
-                    self.gridFrame,
-                    width=8,
-                    height=8,
-                )
-                self.mapGridWindow[row][col].grid(
-                    row=row,
-                    column=col,
-                )
+        self.canvas.grid(row=0, column=0)
+
+        self.buttonFrame.grid(row=0, column=1)
         self.buttonStartStop.pack()
         self.buttonForward.pack()
         self.buttonBack.pack()
