@@ -42,79 +42,25 @@ int main(void)
   PWM_init();
   sei();
   
+  unsigned char received_data; 
+
   while (1)
   {
-	  PORTB = 0x00;
-  }
-  while(1)
-  {
-		drive_turn('L');
-		drive_turn('L');
-		drive_turn('L');
-		drive_turn('L');
-		
-		drive_40_cm_dir('N');		
+	  UART_Transmit_Sen('R');
+	  while(1)
+	  {
+      received_data = UART_Receive_Sen();
+      if (received_data == 'D')
+        break;
+    }
+    received_data = ' ';
+
+    drive_40_cm_dir('N');		
 		cli();
 		for (volatile int j = 0; j < 30; ++j)
 			for (volatile int i = 0; i < 9999; ++i)
 				drive('X', 1, 1);
 		sei();
-	
-		drive_40_cm_dir('W');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_40_cm_dir('E');
-		cli();
-		for (volatile int j = 0; j < 40; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		drive_40_cm_dir('E');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_40_cm_dir('E');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_40_cm_dir('N');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_turn('L');
-		drive_turn('L');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-		for (volatile int i = 0; i < 9999; ++i)
-		drive('X', 1, 1);
-		sei();
-		
-	  /*
-	for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-		drive('N', 1, 1);
-	for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			drive('X', 1, 1);
-	for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			drive('S', 1, 1);
-	for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			drive('X', 1, 1);*/
   }
 }
 
