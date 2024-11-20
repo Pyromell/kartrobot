@@ -38,10 +38,14 @@ Pin Description:
 int main(void)
 {
   PORT_init();
-  PWM_init();
   UART_Init();
+  PWM_init();
   sei();
   
+  while (1)
+  {
+	  PORTB = 0x00;
+  }
   while(1)
   {
 		drive_turn('L');
