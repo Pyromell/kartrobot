@@ -26,7 +26,7 @@ Pin Description:
 	Pin 14 ISR(USART0_RX) (Receive UART data)
 	Pin 15 ISR(USART0_TX) (Send UART confirmation)
 	Pin 16 ISR(USART1_RX) (Receive UART data)
-	Pin 17 ISR(USART1_TX) (Send UART confirmation) // kolla med arvid
+	Pin 17 ISR(USART1_TX) (Send UART confirmation)
 	
 	Pin 18 DIR1 (Direction for left track)
 	Pin 19 DIR2 (Direction for right track)
@@ -42,65 +42,42 @@ int main(void)
   PWM_init();
   sei();
   
-  unsigned char received_data; 
-
-  while (1)
+  while(1)
   {
-	  UART_Transmit_Sen('R');
-	  while(1)
-	  {
-      received_data = UART_Receive_Sen();
-      if (received_data == 'D')
-        break;
-    }
-    received_data = ' ';
+    some_kind_of_test_drive();
+  }
+}
+/*
+void styr()
+{
+  UART_Transmit_Sen('G'); // Gyro data is requested
+  
+}
 
-    drive_40_cm_dir('N');		
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
+void sen()
+{
+  while(1) {
+    if (data = 'G') {
+        transmitt('G');
+        transmitt('degrees');
+        transmitt('degrees >> 8');
+    }
+    
+    
   }
 }
 
-/***********************************
-	Drive Instruction Manual:
-	N: Drive forward
-	S: Reverse
-	W: Turn left
-	E: Turn right
-	
-	X: Stop
-***********************************/
-
-/* SEND
-
-drive_instr = UART_Receive();
-if(drive_instr == 'N')
+switch()
 {
-  PORTB = drive_instr;
-  drive_instr = 0x00;
+  case 'G':
+    transmitt('G');
+    transmitt('degrees');
+    transmitt('degrees >> 8');
+  case 'I':
+    transmitt('I');
+    transmitt(some_kind_of_ir_data0);
+    transmitt(some_kind_of_ir_data1);
+    transmitt(some_kind_of_ir_data2);
+    transmitt(some_kind_of_ir_data3);
 }
-
-
-    for(volatile int i = 0; i < 6000; ++i)
-      UART_Transmit('N');
-    for(volatile int i = 0; i < 2000; ++i)
-      asm("NOP");
-
-    for(volatile int i = 0; i < 6000; ++i)
-      UART_Transmit('X');
-    for(volatile int i = 0; i < 2000; ++i)
-      asm("NOP");
-    
-    for(volatile int i = 0; i < 6000; ++i)
-      UART_Transmit('S');
-    for(volatile int i = 0; i < 2000; ++i)
-      asm("NOP");
-
-    for(volatile int i = 0; i < 6000; ++i)
-      UART_Transmit('X');
-    for(volatile int i = 0; i < 2000; ++i)
-      asm("NOP");
 */
