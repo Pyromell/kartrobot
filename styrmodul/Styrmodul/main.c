@@ -46,14 +46,14 @@ int main(void)
 
   while (1)
   {
-	  UART_Transmit_Sen('R');
 	  while(1)
 	  {
+      UART_Transmit_Sen('R');
       received_data = UART_Receive_Sen();
       if (received_data == 'D')
         break;
     }
-    received_data = ' ';
+    received_data = 'X';
 
     drive_40_cm_dir('N');		
 		cli();
