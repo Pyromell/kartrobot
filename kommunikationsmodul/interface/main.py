@@ -11,16 +11,33 @@ from tkinter import *
 
 from typing import Optional
 
-pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-pi_socket.connect(("10.42.0.1", 8027))
-pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-pi_socket.setblocking(0)
+# pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# pi_socket.connect(("10.42.0.1", 8027))
+# pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+# pi_socket.setblocking(0)
 
+previousPos = (37,37)
+
+
+while(True):
+    try:
+        pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        pi_socket.settimeout(3) # 3 seconds
+        pi_socket.connect(("10.42.0.1", 8027))
+        pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        pi_socket.setblocking(0)
+        break
+    except:
+        print("Anslut till kartrobot07...")
+    
 
 class SquareState(Enum):
     UNKNOWN = 0
     EMPTY = 1
     WALL = 2
+    ROBOT = 3
+    START = 4
+    VISITED = 5
 
 
 class Interface():
@@ -65,6 +82,24 @@ class Interface():
                                     (rownumber+1) * 8,
                                     fill='black',
                                 )
+                            case SquareState.ROBOT:
+                                self.canvas.create_rectangle(
+                                    colnumber * 8,
+                                    rownumber * 8,
+                                    (colnumber+1) * 8,
+                                    (rownumber+1) * 8,
+                                    fill='blue',
+                                )
+                                self.positionText.delete(1.0,END)
+                                self.positionText.insert(END, str(colnumber)+','+str(rownumber))
+                            case SquareState.START:
+                                self.canvas.create_rectangle(
+                                    colnumber * 8,
+                                    rownumber * 8,
+                                    (colnumber+1) * 8,
+                                    (rownumber+1) * 8,
+                                    fill='lime',
+                                )
                 if self.command_queue:
                     pi_socket.sendall(self.command_queue)
                     self.command_queue = None
@@ -93,11 +128,14 @@ class Interface():
 
     def sendRight(self):
         print("Sending Right")
+        #self.command_queue = (1).to_bytes(8, 'big')
         self.command_queue = (3).to_bytes(8, 'big')
-
+        #self.command_queue = (1).to_bytes(8, 'big')
     def sendLeft(self):
         print("Sending Left")
+        #self.command_queue = (1).to_bytes(8, 'big')
         self.command_queue = (4).to_bytes(8, 'big')
+        #self.command_queue = (1).to_bytes(8, 'big')
 
     def sendManualToggle(self):
         print("Sending Manual Toggle")
@@ -121,7 +159,7 @@ class Interface():
         )
         self.buttonBack = Button(
             self.buttonFrame,
-            text="Send Manual Toggle",
+            text="Send Backwards",
             command=self.sendBack,
         )
         self.buttonRight = Button(
@@ -139,6 +177,8 @@ class Interface():
             text="Send Manual Toggle",
             command=self.sendManualToggle,
         )
+        self.positionText = Text(self.buttonFrame, bg='white', width=8, height=1)
+        
         self.canvas = tkinter.Canvas(self.tk, bg='grey', width=600, height=600)
         for colnumber in range(75):
             for rownumber in range(75):
@@ -151,7 +191,8 @@ class Interface():
                 )
 
         self.canvas.grid(row=0, column=0)
-
+        
+        self.buttonFrame.bind('w', self.buttonForward)
         self.buttonFrame.grid(row=0, column=1)
         self.buttonStartStop.pack()
         self.buttonForward.pack()
@@ -159,6 +200,7 @@ class Interface():
         self.buttonRight.pack()
         self.buttonLeft.pack()
         self.buttonManualToggle.pack()
+        self.positionText.pack()
         self.sensorTextBox = tkinter.Text(
             self.buttonFrame,
             height=12,
