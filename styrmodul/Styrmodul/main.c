@@ -42,9 +42,84 @@ int main(void)
   PWM_init();
   sei();
   
+  unsinged char current_status = 'X';
+  uint8_t current_speed = 1;
+  uint8_t manual_mode = 1;
+  /* M = manual mode
+   * A = auto mode
+   */ 
+  /* current_status:
+   * X = Stop
+   * N = Forward
+   * S = Backward
+   * W = Turn on the spot left (L-track backward, R-track forward)
+   * E = Turn on the spot right (L-track forward, R-track backward)
+   */
+  /* current_speed
+   * 0 = stop
+   * 1 - 4 = increasing speed
+   * 5 = max speed
+   * unspecified = 2
+   */
   while(1)
   {
-    some_kind_of_test_drive();
+	  switch(com_instr)
+	  {
+		  case 'M':
+			  manual_mode = 1;
+			  break;
+		  case 'A':
+			  manual_mode = 0;
+			  break;
+		  case 'X':
+			  current_status = 'X';
+			  break;
+		  case 'N':
+			  current_status = 'N';
+			  break;
+		  case 'S':
+			  current_status = 'S';
+			  break;
+		  case 'W':
+			  current_status = 'W';
+			  break;
+		  case 'E':
+			  current_status = 'E';
+			  break;
+		  case '0':
+			  current_speed = 0;
+			  break;
+		  case '1':
+			  current_speed = 1;
+			  break;
+		  case '2':
+			  current_speed = 2;
+			  break;
+		  case '3':
+			  current_speed = 3;
+			  break;
+		  case '4':
+			  current_speed = 4;
+			  break;
+		  case '5':
+			  current_speed = 5;
+			  break;
+		  default:
+			  current_status = 'X';
+			  com_instr = 'X';
+			  break;
+	  }
+
+
+	  }
+	  if (manual_mode == 1)
+	  {
+		  drive(current_status, current_speed, current_speed);
+	  }
+	  else
+	  {
+
+	  }
   }
 }
 /*

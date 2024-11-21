@@ -5,7 +5,7 @@
 #define UBRR 103 // This equals 9600 bps
 
 // Global variables
-uint8_t drive_instr	= 0x00;
+uint8_t com_instr = 0x00;
 uint8_t transmit_data = 0x00;
 
 /***********************************
