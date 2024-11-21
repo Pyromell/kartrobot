@@ -27,7 +27,7 @@ ISR(USART0_RX_vector) {
 	// Receive instruction data
 	while ( !(UCSR0A & (1 << RXC0)) ) ;
 	// Store received instr
-	drive_instr = UDR0;
+	com_instr = UDR0;
   	
     // Send a receive confirmation ('R')
 	while ( !(UCSR0A & (1 << UDRE0)) ) ;	

@@ -19,9 +19,7 @@ uint8_t speed_select(const uint8_t speed) {
 		case 0x04:
 			return TCNT0 | TCNT1 | TCNT2; // 87,5% on, 12,5% off
 		case 0x05:
-			return TCNT0 | TCNT1 | TCNT2 | TCNT3; // 93,75% on, 6,25% off
-		case 0x06:
-			return 0xFF; // FULL POWER! (NOT TESTED!!!!!!)
+			return 0xFF; // FULL POWER!
 		default:
 			return TCNT0; // 50% on, 50 % off
 	}
@@ -65,7 +63,6 @@ void stop()
 
 void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
 {
-  cli();
   //UART_Transmit_Instr_Received();
   switch(drive_dir)
   {
@@ -77,7 +74,6 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
     default: stop(); break;
   }
   //UART_Transmit_Instr_Done();
-  sei();
 }
 
 void drive_test()
