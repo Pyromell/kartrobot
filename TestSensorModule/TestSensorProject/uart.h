@@ -91,10 +91,23 @@ void UART_Transmit_Instr_Received()
 	UART_Transmit_Com('R');
 }
 
-// This function sends a 'D' for DONE over UART0
-// This should be called each time a move instr id completed to indicate to the
-// communication module that the drive module is ready for a new drive instr
-void UART_Transmit_Instr_Done()
+ISR(USART1_RX_vector) 
 {
-	UART_Transmit_C('D');
+	// Store received instr
+	switch(UDR1) 
+	{
+		case 'G':
+		{
+			uint16_t data = Gyro_ReadValue();
+			UART_Transmit_Sen('G');
+			UART_Transmit_Sen(data >> 8);
+			UART_Transmit_Sen(data);
+			break;
+		}
+		default:
+			UART_Transmit_Sen(0xFF);
+			break;
+
+	}
+	
 }
