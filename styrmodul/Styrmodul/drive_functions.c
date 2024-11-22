@@ -1,3 +1,5 @@
+#pragma once
+
 uint8_t speed_div_1 (void) { return TCNT0; }
 
 uint8_t speed_div_8 (void) { return TCNT1; }
@@ -76,94 +78,16 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
   //UART_Transmit_Instr_Done();
 }
 
-void drive_test()
-{
-	cli();
-	for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			north(1,1);
-	
-	for (int j = 0; j < 99; ++j)
-		for (int i = 0; i < 9999; ++i)
-			stop();
-	
-	for (int j = 0; j < 30; ++j)
-		for (int i = 0; i < 9999; ++i)
-			south(1,1);
-	
-	for (int j = 0; j < 99; ++j)
-		for (int i = 0; i < 9999; ++i)
-			stop();
-	sei();
-}
-
-void some_kind_of_test_drive()
-{
-    drive_turn('L');
-		drive_turn('L');
-		drive_turn('L');
-		drive_turn('L');
-		
-		drive_40_cm_dir('N');		
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-	
-		drive_40_cm_dir('W');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_40_cm_dir('E');
-		cli();
-		for (volatile int j = 0; j < 40; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		drive_40_cm_dir('E');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_40_cm_dir('E');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_40_cm_dir('N');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-			for (volatile int i = 0; i < 9999; ++i)
-				drive('X', 1, 1);
-		sei();
-		
-		drive_turn('L');
-		drive_turn('L');
-		cli();
-		for (volatile int j = 0; j < 30; ++j)
-		  for (volatile int i = 0; i < 9999; ++i)
-		    drive('X', 1, 1);
-		sei();
-}
-
 uint32_t TEMP_COUNTER = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 uint32_t TEMP_COUNTER_2 = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 
 // Drive 40 cm forward
-void drive_40_cm()
+void drive_40_cm(const unsigned char dir)
 {
 	//UART_Transmit_S(''); // Starting movement
 	while(wheel_marker_l < 40 && TEMP_COUNTER_2 < 2)
 	{
-		drive('N', 1, 1);
+		drive(dir, 1, 1);
 		TEMP_COUNTER++;
 		if (TEMP_COUNTER == 65534)
 		{
@@ -177,41 +101,43 @@ void drive_40_cm()
 }
 
 // Perform a 90 degrees turn in the specified direction
-void drive_turn(char dir)
+void drive_turn(const char dir)
 {
-	if(dir == 'R')
+	int32_t total_angle = 0;
+	
+	if (dir == 'W')
 	{
-		//UART_Transmit_S(''); // Starting movement
-		while(gyro_data < 90 && TEMP_COUNTER_2 < 2)
+		//UART_Transmit_Sen(''); // Starting movement
+		//UART_Transmit_Com(''); // Starting movement
+		
+		while(total_angle < 9000)
 		{
-			drive('E', 1, 1);
-			TEMP_COUNTER++;
-			if (TEMP_COUNTER == 50000)
+			if (timer_10_ms > 0)
 			{
-				TEMP_COUNTER = 0;
-				TEMP_COUNTER_2++;
+				total_angle += -sensor_gyro * timer_10_ms;
+				UART_Transmit_Sen('G');
+				timer_10_ms = 0;
 			}
-		}
-		TEMP_COUNTER = 0;
-		TEMP_COUNTER_2 = 0;
-		//UART_Transmit_S(''); // Movement done
-	}
-	else if (dir == 'L')
-	{
-		//UART_Transmit_S(''); // Starting movement
-		while(gyro_data < 90 && TEMP_COUNTER_2 < 2)
-		{
 			drive('W', 1, 1);
-			TEMP_COUNTER++;
-			if (TEMP_COUNTER == 45000)
-			{
-				TEMP_COUNTER = 0;
-				TEMP_COUNTER_2++;
-			}
 		}
-		TEMP_COUNTER = 0;
-		TEMP_COUNTER_2 = 0;
-		//UART_Transmit_S(''); // Movement done
+		//UART_Transmit_Com(''); // Movement done
+	}
+	else if(dir == 'E')
+	{
+		//UART_Transmit_Sen(''); // Starting movement
+		//UART_Transmit_Com(''); // Starting movement
+		
+		while(total_angle < 9000)
+		{
+			if (timer_10_ms > 0)
+			{
+				total_angle += sensor_gyro * timer_10_ms;
+				UART_Transmit_Sen('G');
+				timer_10_ms = 0;
+			}
+			drive('E', 1, 1);
+		}
+		//UART_Transmit_Com(''); // Movement done
 	}
 }
 
@@ -223,22 +149,168 @@ void drive_40_cm_dir(char dir)
 	switch (dir)
 	{
 		case 'N':
-			drive_40_cm();
+			drive_40_cm('N');
 			break;
 		case 'S': // Turn left twice to achieve a pi turn :)
 			drive_turn('L');
 			drive_turn('L');
-			drive_40_cm();
+			drive_40_cm('N');
 			break;
 		case 'E':
 			drive_turn('R');
-			drive_40_cm();
+			drive_40_cm('N');
 			break;
 		case 'W':
 			drive_turn('L');
-			drive_40_cm();
+			drive_40_cm('N');
 			break;
 		default:
 			break;
 	}
 }
+
+
+///////////////////////////////////
+// Test functions:
+///////////////////////////////////
+
+
+void drive_test()
+{
+	for (int j = 0; j < 30; ++j)
+	for (int i = 0; i < 9999; ++i)
+	drive_turn('W');
+	
+	for (int j = 0; j < 99; ++j)
+	for (int i = 0; i < 9999; ++i)
+	stop();
+	
+	for (int j = 0; j < 30; ++j)
+	for (int i = 0; i < 9999; ++i)
+	drive_turn('E');
+	
+	for (int j = 0; j < 99; ++j)
+	for (int i = 0; i < 9999; ++i)
+	stop();
+}
+
+void some_kind_of_test_drive()
+{
+	drive_turn('L');
+	drive_turn('L');
+	drive_turn('L');
+	drive_turn('L');
+	
+	drive_40_cm_dir('N');
+	cli();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+	
+	drive_40_cm_dir('W');
+	cli();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+	
+	drive_40_cm_dir('E');
+	cli();
+	for (volatile int j = 0; j < 40; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+	drive_40_cm_dir('E');
+	cli();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+	
+	drive_40_cm_dir('E');
+	cli();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+	
+	drive_40_cm_dir('N');
+	cli();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+	
+	drive_turn('L');
+	drive_turn('L');
+	cli();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive('X', 1, 1);
+	sei();
+}
+
+/* Save station
+// Perform a 90 degrees turn in the specified direction
+void drive_turn(char dir)
+{
+	int32_t total_angle = 0;
+	
+	if (dir == 'L')
+	{
+		//UART_Transmit_Sen(''); // Starting movement
+		//UART_Transmit_Com(''); // Starting movement
+		
+		while(total_angle < 90000 && TEMP_COUNTER_2 < 2)
+		{
+			if (timer_10_ms > 0)
+			{
+				total_angle += sensor_gyro * timer_10_ms;
+				UART_Transmit_Sen('G');
+				timer_10_ms = 0;
+			}
+			drive('W', 1, 1);
+
+			TEMP_COUNTER++;
+			if (TEMP_COUNTER == 45000)
+			{
+				TEMP_COUNTER = 0;
+				TEMP_COUNTER_2++;
+			}
+		}
+		TEMP_COUNTER = 0;
+		TEMP_COUNTER_2 = 0;
+		
+		//UART_Transmit_Com(''); // Movement done
+	}
+	else if(dir == 'R')
+	{
+		//UART_Transmit_Sen(''); // Starting movement
+		//UART_Transmit_Com(''); // Starting movement
+		
+		while(total_angle < 90000 && TEMP_COUNTER_2 < 2)
+		{
+			if (timer_10_ms > 0)
+			{
+				total_angle += sensor_gyro * timer_10_ms;
+				UART_Transmit_Sen('G');
+				timer_10_ms = 0;
+			}
+			drive('E', 1, 1);
+
+			TEMP_COUNTER++;
+			if (TEMP_COUNTER == 45000)
+			{
+				TEMP_COUNTER = 0;
+				TEMP_COUNTER_2++;
+			}
+		}
+		TEMP_COUNTER = 0;
+		TEMP_COUNTER_2 = 0;
+		
+		//UART_Transmit_Com(''); // Movement done
+	}
+}
+
+*/

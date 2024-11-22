@@ -96,5 +96,5 @@ void UART_Transmit_Instr_Received()
 // communication module that the drive module is ready for a new drive instr
 void UART_Transmit_Instr_Done()
 {
-	UART_Transmit_C('D');
+	//UART_Transmit_C('D');
 }
