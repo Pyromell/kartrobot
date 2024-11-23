@@ -13,8 +13,10 @@ File Description:
 	This file Handles the UART without the use of ISR
 
 Pin Description:
-	Pin 14 ISR(USART0_RX) (Receive UART data)
-	Pin 15 ISR(USART0_RX) (Send UART data)
+	Pin 14 ISR(USART0_RX) (Receive UART) (com. module)
+	Pin 15 ISR(USART0_TX) (Send UART)    (com. module)
+	Pin 16 ISR(USART1_RX) (Receive UART) (sen. module)
+	Pin 17 ISR(USART1_TX) (Send UART)    (sen. module)
   
 ***********************************/
 

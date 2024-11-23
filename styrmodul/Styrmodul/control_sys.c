@@ -89,7 +89,6 @@ void evaluate_walls()
 // Currently it's only: close, good, far. This will prob. be changed to a variable?
 void dist_to_wall()
 {
-	uint16_t distance_400mm = 400;
 	uint16_t distance_395mm = 395;
 	uint16_t distance_405mm = 405;	
 
