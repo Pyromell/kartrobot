@@ -94,7 +94,8 @@ void UART_Transmit_Instr_Received()
 ISR(USART1_RX_vector) 
 {
 	// Store received instr
-	switch(UDR1) 
+	uint8_t sw = UDR1;
+	switch(sw) 
 	{
 		case 'G':
 		{

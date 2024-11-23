@@ -1,9 +1,25 @@
-void PORT_init(void) {
+/***********************************
+File Description:
+	This file Handles the init of stuff
+
+Pin Description:
+	Pin 18 DIR1 (Direction for left track)
+	Pin 19 DIR2 (Direction for right track)
+	Pin 20 PWM1 ("Speed" for left track)
+	Pin 21 PWM2 ("Speed" for right track)
+	
+TEMP ports:
+	DDRD	= 0xFA; // NEEDED FOR DIR, not pwm (Pin 14-21)
+	DDRB	= 0xFF; // used for error checking (Pin 1 - 8)
+  
+***********************************/
+
+void PORT_Init(void) {
 	// low inits UART, high intis Wrooom
 	DDRD	= 0xFA;	
 	DDRB	= 0xFF; 
 }
-void PWM_init(void) {
+void PWM_Init(void) {
 	// inits PWM interrupt
 	/*
 	0: clk I/O /(No prescaling)
@@ -44,4 +60,9 @@ void PWM_init(void) {
 	TIMSK3 |= (1 << OCIE3A);
 	
 	OCR3A = 20400;
+}
+
+void Interrupt_Init()
+{
+	sei();
 }

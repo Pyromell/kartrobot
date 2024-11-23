@@ -1,12 +1,16 @@
 #pragma once
 
-uint8_t speed_div_1 (void) { return TCNT0; }
+// Global variables:
 
-uint8_t speed_div_8 (void) { return TCNT1; }
+uint8_t wheel_marker_l = 0; // One cog index is one white 'marker' on the wheel
+uint8_t wheel_marker_r = 0;
 
-uint8_t speed_div_64 (void) { return TCNT2; }
 
-uint8_t speed_div_256 (void) { return TCNT3; }
+/*
+TCNT0 = speed_div_1
+TCNT1 = speed_div_8
+TCNT2 = speed_div_64
+*/
 
 uint8_t speed_select(const uint8_t speed) {
 	switch (speed) {
@@ -25,7 +29,6 @@ uint8_t speed_select(const uint8_t speed) {
 		default:
 			return TCNT0; // 50% on, 50 % off
 	}
-	return TCNT0; //FAILSAFE
 }
 
 void north(const uint8_t speed_left, const uint8_t speed_right)
@@ -78,6 +81,9 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
   //UART_Transmit_Instr_Done();
 }
 
+
+
+
 uint32_t TEMP_COUNTER = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 uint32_t TEMP_COUNTER_2 = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
 
@@ -87,7 +93,7 @@ void drive_40_cm(const unsigned char dir)
 	//UART_Transmit_S(''); // Starting movement
 	while(wheel_marker_l < 40 && TEMP_COUNTER_2 < 2)
 	{
-		drive(dir, 1, 1);
+		drive(dir, 2, 2);
 		TEMP_COUNTER++;
 		if (TEMP_COUNTER == 65534)
 		{
@@ -104,21 +110,23 @@ void drive_40_cm(const unsigned char dir)
 void drive_turn(const char dir)
 {
 	int32_t total_angle = 0;
+	timer_10_ms = 0;
+	sensor_gyro = 0;
 	
 	if (dir == 'W')
 	{
 		//UART_Transmit_Sen(''); // Starting movement
 		//UART_Transmit_Com(''); // Starting movement
 		
-		while(total_angle < 9000)
+		while(total_angle < 90)
 		{
 			if (timer_10_ms > 0)
 			{
-				total_angle += -sensor_gyro * timer_10_ms;
+				total_angle += sensor_gyro * timer_10_ms;
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
 			}
-			drive('W', 1, 1);
+			drive('W', 2, 2);
 		}
 		//UART_Transmit_Com(''); // Movement done
 	}
@@ -127,7 +135,7 @@ void drive_turn(const char dir)
 		//UART_Transmit_Sen(''); // Starting movement
 		//UART_Transmit_Com(''); // Starting movement
 		
-		while(total_angle < 9000)
+		while(total_angle < 90)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -135,10 +143,27 @@ void drive_turn(const char dir)
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
 			}
-			drive('E', 1, 1);
+			drive('E', 2, 2);
 		}
 		//UART_Transmit_Com(''); // Movement done
 	}
+	else if(dir == 'S')
+		{
+			//UART_Transmit_Sen(''); // Starting movement
+			//UART_Transmit_Com(''); // Starting movement
+		
+			while(total_angle < 180)
+			{
+				if (timer_10_ms > 0)
+				{
+					total_angle += sensor_gyro * timer_10_ms;
+					UART_Transmit_Sen('G');
+					timer_10_ms = 0;
+				}
+				drive('W', 2, 2);
+			}
+			//UART_Transmit_Com(''); // Movement done
+		}
 }
 
 // Drive 40 cm in the direction specified by dir.
@@ -169,7 +194,6 @@ void drive_40_cm_dir(char dir)
 	}
 }
 
-
 ///////////////////////////////////
 // Test functions:
 ///////////////////////////////////
@@ -177,16 +201,13 @@ void drive_40_cm_dir(char dir)
 
 void drive_test()
 {
-	for (int j = 0; j < 30; ++j)
-	for (int i = 0; i < 9999; ++i)
+
 	drive_turn('W');
 	
 	for (int j = 0; j < 99; ++j)
 	for (int i = 0; i < 9999; ++i)
 	stop();
 	
-	for (int j = 0; j < 30; ++j)
-	for (int i = 0; i < 9999; ++i)
 	drive_turn('E');
 	
 	for (int j = 0; j < 99; ++j)

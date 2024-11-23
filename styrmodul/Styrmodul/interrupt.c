@@ -22,22 +22,18 @@ Pin Description:
 // This functions receives UART instr on UART0
 // The ISR sends an 'U' to indicate that the data was received
 
-ISR(USART0_RX_vector) {
-	// Receive instruction data
-	while ( !(UCSR0A & (1 << RXC0)) ) ;
-	// Store received instr
+ISR(USART0_RX_vect) {
+	// Store received data
 	com_instr = UDR0;
   	
     // Send a receive confirmation ('R')
-	while ( !(UCSR0A & (1 << UDRE0)) ) ;	
-	for (int i = 0; i < 99; ++i)
-		asm("NOP");
-    
 	UDR0 = 'R';
-	
 }
 
-ISR(USART1_RX_vector) {
+
+ISR(USART1_RX_vect) {
+	com_instr = UDR1;
+/*
   switch(sensor) {
     case 'G' :
       control++;
@@ -57,6 +53,8 @@ ISR(USART1_RX_vector) {
 		sensor = UDR1;
 		break;
   }  
+*/  
+
   /*
   // Send a receive confirmation ('R')
 	while ( !(UCSR1A & (1 << UDRE1)) ) ;	
@@ -67,7 +65,9 @@ ISR(USART1_RX_vector) {
 	*/
 }
 
-uint16_t timer_10_ms = 0;
+
+
+uint8_t timer_10_ms = 0;
 
 ISR(TIMER3_COMPA_vect) {
 	timer_10_ms++;
