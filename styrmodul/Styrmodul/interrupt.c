@@ -27,13 +27,11 @@ ISR(USART0_RX_vect) {
 	com_instr = UDR0;
   	
     // Send a receive confirmation ('R')
-	UDR0 = 'R';
+	//UDR0 = 'R';
 }
 
 
 ISR(USART1_RX_vect) {
-	com_instr = UDR1;
-/*
   switch(sensor) {
     case 'G' :
       control++;
@@ -53,8 +51,7 @@ ISR(USART1_RX_vect) {
 		sensor = UDR1;
 		break;
   }  
-*/  
-
+ 
   /*
   // Send a receive confirmation ('R')
 	while ( !(UCSR1A & (1 << UDRE1)) ) ;	
