@@ -30,7 +30,10 @@ ISR(USART1_RX_vect)
     }
     else if (inData == 'I')
     {
-        uint8_t IRdata = IR_ReadValue();
-        UART_Transmit_SM(IRdata);
+		for (uint8_t i = 0; i < 6; i++)
+		{
+			uint8_t IRdata = IR_ReadValue(i);
+			UART_Transmit_SM(IRdata);
+		}
     }
 }

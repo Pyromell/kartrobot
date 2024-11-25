@@ -12,20 +12,34 @@ Pin Description:
 
 #define MODULE_INDENTIFIER 1
 #define COMMAND_VALUE_IDENTIFY 255
+#define COMMAND_VALUE_REQUEST_Gyro 254
 #define COMMAND_VALUE_REQUEST_IR 253
 
 
 ISR(USART0_RX_vect) 
 {
 
-	uint8_t data = UART_Receive_CM();
-	if (data == COMMAND_VALUE_IDENTIFY)
+	uint8_t commandData = UART_Receive_CM();
+	if (commandData == COMMAND_VALUE_IDENTIFY)
 	{
 		UART_Transmit_CM(MODULE_INDENTIFIER);
 	}
-	else if (data == COMMAND_VALUE_REQUEST_IR)
+	else if (commandData == COMMAND_VALUE_REQUEST_Gyro)
 	{
+        uint16_t gyroData = Gyro_ReadValue();
+        UART_Transmit_CM(gyroData >> 8);
+        UART_Transmit_CM(gyroData);	
 		
+	}	
+	else if (commandData == COMMAND_VALUE_REQUEST_IR)
+	{
+
+		for (uint8_t i = 0; i < 6; i++)
+		{
+			uint8_t IRdata = IR_ReadValue(i);
+			UART_Transmit_CM(IRdata);
+		}		
+			
 	}
 
 }
