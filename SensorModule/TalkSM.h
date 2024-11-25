@@ -28,4 +28,8 @@ ISR(USART1_RX_vect)
         UART_Transmit_SM(gyroData >> 8);
         UART_Transmit_SM(gyroData);
     }
+    else if (inData == 'I')
+    {
+        
+    }
 }
