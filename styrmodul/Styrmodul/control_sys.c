@@ -35,7 +35,7 @@ enum wall_angle_values {
 	//invalid
 };
 
-uint16_t ir_data[6] = {0,0,0,0,0,0};
+uint8_t ir_data[6] = {0,0,0,0,0,0};
 
 bool walls[4] = {0,0,0,0}; // Do we have walls?
 uint16_t wall_relation[4] = {invalid, invalid, invalid, invalid}; // How close are we to a wall?
@@ -61,11 +61,12 @@ void main_flow()
 }
 
 // not finished
-bool ir_data_validation(uint16_t data)
+/*
+bool ir_data_validation(uint8_t data)
 {
-	uint16_t min_val = 0x0000;
-	uint16_t max_val = 0xFFFF;
-	return (data > min_val && data < max_val);
+	const uint8_t min_val = 0x0A;
+	const uint8_t max_val = 0x50;
+	return (data >= min_val && data <= max_val);
 }
 
 // Function that evaluates if ir_data have detected a wall
@@ -78,19 +79,20 @@ void evaluate_walls()
 	walls[Wall_B] = ir_data_validation(ir_data[Sen_B]);
 	
 	// Left wall
-	walls[Wall_L] = ir_data_validation(ir_data[Sen_LF]) || ir_data_validation(ir_data[Sen_LB]);
+	walls[Wall_L] = ir_data_validation(ir_data[Sen_LF]) && ir_data_validation(ir_data[Sen_LB]);
 	
 	// Right wall
-	walls[Wall_R] = ir_data_validation(ir_data[Sen_RF]) || ir_data_validation(ir_data[Sen_RB]);
+	walls[Wall_R] = ir_data_validation(ir_data[Sen_RF]) && ir_data_validation(ir_data[Sen_RB]);
 }
+*/
 
 // Detect if the robot is too far away, good distance, or too close to the wall
 // This will be used in conjunction with the angle of the robot.
 // Currently it's only: close, good, far. This will prob. be changed to a variable?
 void dist_to_wall()
 {
-	uint16_t distance_395mm = 395;
-	uint16_t distance_405mm = 405;	
+	uint8_t distance_395mm = 395;
+	uint8_t distance_405mm = 405;	
 
 	// Front wall
 	wall_relation[Wall_F] = invalid;
