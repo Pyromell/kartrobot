@@ -39,6 +39,8 @@ Instruction Manual:
    * 6:S once for manual mode
    * 7:E once for manual mode
    * 8:W once for manual mode
+   
+   * 9:S Turn around on the spot (L-track backward, R-track forward)
 
 The speed is not adjustable by com. module at the moment
    * current_speed (l & r):
@@ -56,55 +58,51 @@ int main(void)
   
   uint8_t current_speed_l = 1, current_speed_r = 1;
 
-	while (1)
-	{
-		drive_test();
-	}
-
-  
-}
-/*
-
 while(1)
 {
 	switch(com_instr) {
 		case 0:
-		stop();
-		break;
+			stop();
+			break;
 		case 0x01:
-		drive_40_cm('N');
-		com_instr = 'X';
-		break;
+			drive_40_cm('N');
+			com_instr = 'X';
+			break;
 		case 0x02:
-		drive_40_cm('S');
-		com_instr = 'X';
-		break;
+			drive_40_cm('S');
+			com_instr = 'X';
+			break;
 		case 0x03:
-		drive_turn('E');
-		com_instr = 'X';
-		break;
+			drive_turn('E');
+			com_instr = 'X';
+			break;
 		case 0x04:
-		drive_turn('W');
-		com_instr = 'X';
-		break;
+			drive_turn('W');
+			com_instr = 'X';
+			break;
 		case 0x05:
-		drive('N',current_speed_l,current_speed_r);
-		com_instr = 'X';
-		break;
+			drive('N',current_speed_l,current_speed_r);
+			com_instr = 'X';
+			break;
 		case 0x06:
-		drive('S',current_speed_l,current_speed_r);
-		com_instr = 'X';
-		break;
+			drive('S',current_speed_l,current_speed_r);
+			com_instr = 'X';
+			break;
 		case 0x07:
-		drive('E',current_speed_l,current_speed_r);
-		com_instr = 'X';
-		break;
+			drive('E',current_speed_l,current_speed_r);
+			com_instr = 'X';
+			break;
 		case 0x08:
-		drive('W',current_speed_l,current_speed_r);
-		com_instr = 'X';
-		break;
+			drive('W',current_speed_l,current_speed_r);
+			com_instr = 'X';
+			break;
+		case 0x09:
+			drive_turn('S');
+			com_instr = 'X';
+			break;
 		default:
-		stop();
-		break;
+			stop();
+			break;
 	}
-}*/
+  }
+}
