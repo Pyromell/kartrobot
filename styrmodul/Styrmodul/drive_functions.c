@@ -82,27 +82,23 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
 }
 
 
-
-
-uint32_t TEMP_COUNTER = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
-uint32_t TEMP_COUNTER_2 = 0; //THIS ACTS AS TEMPORARY SENSOR DATA
-
 // Drive 40 cm forward
 void drive_40_cm(const unsigned char dir)
 {
+	uint32_t exit_timer = 0; // Exit timer if something goes wrong
+	uint32_t exit_timer_2 = 0;
+	
 	//UART_Transmit_S(''); // Starting movement
-	while(wheel_marker_l < 40 && TEMP_COUNTER_2 < 2)
+	while(wheel_marker_l < 40 && exit_timer_2 < 2)
 	{
 		drive(dir, 2, 2);
-		TEMP_COUNTER++;
-		if (TEMP_COUNTER == 65534)
+		exit_timer++;
+		if (exit_timer == 65534)
 		{
-			TEMP_COUNTER = 0;
-			TEMP_COUNTER_2++;
+			exit_timer = 0;
+			exit_timer_2++;
 		}
 	}
-	TEMP_COUNTER = 0;
-	TEMP_COUNTER_2 = 0;
 	//UART_Transmit_S(''); // Movement done
 }
 
@@ -110,6 +106,8 @@ void drive_40_cm(const unsigned char dir)
 void drive_turn(const char dir)
 {
 	int32_t total_angle = 0;
+	int32_t exit_timer = 0;
+	
 	timer_10_ms = 0;
 	sensor_gyro = 0;
 	
@@ -118,7 +116,7 @@ void drive_turn(const char dir)
 		//UART_Transmit_Sen(''); // Starting movement
 		//UART_Transmit_Com(''); // Starting movement
 		
-		while(total_angle < 90)
+		while(total_angle < 90000 || exit_timer > 5)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -135,7 +133,7 @@ void drive_turn(const char dir)
 		//UART_Transmit_Sen(''); // Starting movement
 		//UART_Transmit_Com(''); // Starting movement
 		
-		while(total_angle < 90)
+		while(total_angle < 90000)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -152,7 +150,7 @@ void drive_turn(const char dir)
 			//UART_Transmit_Sen(''); // Starting movement
 			//UART_Transmit_Com(''); // Starting movement
 		
-			while(total_angle < 180)
+			while(total_angle < 180000)
 			{
 				if (timer_10_ms > 0)
 				{
