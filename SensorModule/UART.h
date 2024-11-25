@@ -1,4 +1,5 @@
 #pragma once
+
 #include <avr/io.h>
 
 // Defines
@@ -37,14 +38,14 @@ void UART_Init(void) {
 }
 
 // Communications module
-unsigned char UART_Receive_Com(void) {
+unsigned char UART_Receive_CM(void) {
 	while ( !(UCSR0A & (1 << RXC0)) )
 	;
 	return UDR0;
 }
 
 // Communications module
-void UART_Transmit_Com(const unsigned char data) {
+void UART_Transmit_CM(const unsigned char data) {
 	// wait for empty transmit buffer
 	while ( !(UCSR0A & (1 << UDRE0)) ) ;
 	
@@ -58,46 +59,19 @@ void UART_Transmit_Com(const unsigned char data) {
 	while(TXC0 == 1) ;
 }
 
-// Sensor module
-unsigned char UART_Receive_Sen(void) {
+// SensorModule/StyrModule
+unsigned char UART_Receive_SM(void) {
 	while ( !(UCSR1A & (1 << RXC1)) )
 	;
 	return UDR1;
 }
 
-// Sensor module
-void UART_Transmit_Sen(const unsigned char data) {
+// SensorModule/StyrModule
+void UART_Transmit_SM(const unsigned char data) {
 	// wait for empty transmit buffer
 	while ( !(UCSR1A & (1 << UDRE1)) ) ;
-
 	// put data into buffer
 	UDR1 = data;
-
 	// wait for the hardware to set its done flag
 	while(TXC1 == 1) ;
 }
-
-void UART_Transmit_Choice(const char choice, const unsigned char data) {
-	if(choice == 'C')
-		UART_Transmit_Sen(data);
-	else if(choice == 'S')
-		UART_Transmit_Com(data);
-}
-
-// This function sends a 'R' for RECEIVED over UART0
-// This should be called each time we receive a drive instr. to indicate to
-// the communication module that the drive module is currently doing a drive
-// function.
-void UART_Transmit_Instr_Received()
-{
-	UART_Transmit_Com('R');
-}
-
-// This function sends a 'D' for DONE over UART0
-// This should be called each time a move instr id completed to indicate to the
-// communication module that the drive module is ready for a new drive instr
-void UART_Transmit_Instr_Done()
-{
-	//UART_Transmit_C('D');
-}
-

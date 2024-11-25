@@ -15,17 +15,22 @@ Pin Description:
 //					3	:	low byte of gyro data
 
 #include "uart.h"
-#include "SensorModule_Gyro.h"
+#include "Gyro.h"
 
 ISR(USART1_RX_vect) 
 {
 
-    unsigned char data = UDR1;
-    UART_Transmit_Sen(data);
-    if (data == 'G')
+    unsigned char inData = UDR1;
+    UART_Transmit_SM(inData);
+    if (inData == 'G')
     {
         uint16_t gyroData = Gyro_ReadValue();
-        UART_Transmit_Sen(gyroData >> 8);
-        UART_Transmit_Sen(gyroData);
+        UART_Transmit_SM(gyroData >> 8);
+        UART_Transmit_SM(gyroData);
+    }
+    else if (inData == 'I')
+    {
+        uint8_t IRdata = IR_ReadValue();
+        UART_Transmit_SM(IRdata);
     }
 }

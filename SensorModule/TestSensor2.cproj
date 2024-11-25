@@ -140,13 +140,25 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Gyro.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Gyro.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="IR.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="IR.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="SensorModule_Gyro.h">
+    <Compile Include="TalkCM.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="SensorModule_IR.h">
+    <Compile Include="TalkSM.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="uart.h">

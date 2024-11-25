@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Gyro.h"
+#include <avr/io.h>
+
+
 /***********************************
 Pin Description:
 	Pin 14 ISR(USART0_RX) (Receive UART) (com. module)
@@ -14,10 +18,10 @@ Pin Description:
 ISR(USART0_RX_vect) 
 {
 
-	uint8_t data = UART_Receive_Com();
+	uint8_t data = UART_Receive_CM();
 	if (data == COMMAND_VALUE_IDENTIFY)
 	{
-		UART_Transmit_Com(MODULE_INDENTIFIER);
+		UART_Transmit_CM(MODULE_INDENTIFIER);
 	}
 	else if (data == COMMAND_VALUE_REQUEST_IR)
 	{

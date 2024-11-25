@@ -1,7 +1,4 @@
-#pragma once
-
-#ifndef SENSORMODULE_IR
-#define SENSORMODULE_IR
+#include "IR.h"
 
 #define VREF 5.0f
 //	ADC conversion value is 10 bits
@@ -15,6 +12,17 @@
 #define IR_PIN4 4
 #define IR_PIN5 5
 
+#define IR_dataBuffer_length 6
+int16_t IR_dataBuffer[IR_dataBuffer_length];
+
+void IR_WriteValue(uint8_t sensorIndex, uint8_t IRdata)
+{	
+	IR_dataBuffer[sensorIndex] = IRdata;
+}
+uint16_t IR_ReadValue(uint8_t sensorIndex)
+{
+	return IR_dataBuffer[sensorIndex];
+}
 
 void IR_ADC_start(uint8_t sensorPinIndex)
 {
@@ -92,10 +100,6 @@ float IR_ConvertADC(uint16_t adcValue)
 	}
 	
 	return 0.0f;
-	
-
-	
-	
 }
 
 
@@ -118,7 +122,7 @@ uint16_t IR_ReadADC(uint8_t sensorIndex)
 	ADC_l = ADC_l >> 6;
 	
 	uint16_t ADC_done = ADC_h + ADC_l;
-	return ADC_done;//ReadSensor_IR_ToDistance_Temp(ADC_done);
+	return ADC_done;
 
 }
 
@@ -129,5 +133,24 @@ float IR_ReadDistance_CM(uint8_t sensorIndex)
 	return distanceCM;
 }
 
+//	NOTE:
+//		Only one pin can undergo a ADC convertion at a time,
+//		we will loop and convert the adc values of all 6 pins 
+//		used to communicate with the IR sensor
+//		Consider replacing this function with a system that can convert
+//		asynchronously. Running this function wastes a lot of time.
+//		ALSO this function is not optimized in order to avoid bugs.
+//		The ADC to CM conversion should idealy be done while waiting for the 
+//		next conversion.
+//	TLDR:	THIS IS BAD FOR PERFORMANCE PLS FIX 
+uint8_t IR_UpdateBuffer()
+{
+	for (uint8_t sensorIndex = 0; sensorIndex < 6; sensorIndex++)
+	{
+		float cm = IR_ReadDistance_CM(sensorIndex);
+		uint8_t result = (uint8_t)cm;
+		IR_WriteValue(sensorIndex, result);
+	}
 
-#endif /* SENSORMODULE_IR_H_ */
+	return 1;
+}
