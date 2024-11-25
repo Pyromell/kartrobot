@@ -10,15 +10,10 @@
 #include "ComsControllModule.h"
 
 int main(void)
-{
+ {
 	DDRD  = 0b11111111;
-	
-	float res = IR_ConvertADC(220);
 
 	uint8_t errorCode = 0;
-	
-	if (res > 0.3f)
-		errorCode = 2;
 
 	if (!IR_Init())
 		errorCode = 0xFF;

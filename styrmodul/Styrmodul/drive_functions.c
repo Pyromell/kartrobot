@@ -116,7 +116,7 @@ void drive_turn(const char dir)
 		//UART_Transmit_Sen(''); // Starting movement
 		//UART_Transmit_Com(''); // Starting movement
 		
-		while(total_angle < 90000 || exit_timer > 5)
+		while(total_angle < 90000)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -133,7 +133,7 @@ void drive_turn(const char dir)
 		//UART_Transmit_Sen(''); // Starting movement
 		//UART_Transmit_Com(''); // Starting movement
 		
-		while(total_angle < 90000)
+		while(total_angle < 90)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -201,12 +201,6 @@ void drive_test()
 {
 
 	drive_turn('W');
-	
-	for (int j = 0; j < 99; ++j)
-	for (int i = 0; i < 9999; ++i)
-	stop();
-	
-	drive_turn('E');
 	
 	for (int j = 0; j < 99; ++j)
 	for (int i = 0; i < 9999; ++i)

@@ -4,9 +4,9 @@
 
 #include "uart.c"
 
-uint16_t sensor_gyro_temp = 0;
-uint16_t sensor_gyro = 0;
-uint8_t control = 0;
+int16_t sensor_gyro_temp = 0;
+int16_t sensor_gyro = 0;
+uint8_t byte_nr = 0;
 unsigned char sensor = 0;
 
 /***********************************
@@ -32,23 +32,25 @@ ISR(USART0_RX_vect) {
 
 
 ISR(USART1_RX_vect) {
+  byte_nr++;
+  
   switch(sensor) {
     case 'G' :
-      control++;
-      if (control == 1) {
+      if (byte_nr == 1) {
         sensor_gyro_temp = UDR1;
       }
-      else if (control >= 2) {
+      else if (byte_nr >= 2) {
         sensor_gyro_temp = (sensor_gyro_temp << 8);
         sensor_gyro_temp |= UDR1;
         sensor_gyro = sensor_gyro_temp;
-        control = 0;
         sensor = 'x';
       }
       break;
 	  
     default:
+		sensor_gyro_temp = 0;
 		sensor = UDR1;
+		byte_nr = 0;
 		break;
   }  
  

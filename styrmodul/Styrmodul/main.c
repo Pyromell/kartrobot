@@ -58,54 +58,53 @@ int main(void)
 
 	while (1)
 	{
-		UART_Transmit_Sen('G');
-		
-		for (int j = 0; j < 99; ++j)
-		for (int i = 0; i < 9999; ++i)
-		asm("NOP");
+		drive_test();
 	}
 
-  while(1)
-  {
+  
+}
+/*
+
+while(1)
+{
 	switch(com_instr) {
 		case 0:
-			stop();
-			break;
+		stop();
+		break;
 		case 0x01:
-			drive_40_cm('N');
-			com_instr = 'X';
-			break;
+		drive_40_cm('N');
+		com_instr = 'X';
+		break;
 		case 0x02:
-			drive_40_cm('S');
-			com_instr = 'X';
-			break;
+		drive_40_cm('S');
+		com_instr = 'X';
+		break;
 		case 0x03:
-			drive_turn('E');
-			com_instr = 'X';
-			break;
+		drive_turn('E');
+		com_instr = 'X';
+		break;
 		case 0x04:
-			drive_turn('W');
-			com_instr = 'X';
-			break;
+		drive_turn('W');
+		com_instr = 'X';
+		break;
 		case 0x05:
-			drive('N',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
+		drive('N',current_speed_l,current_speed_r);
+		com_instr = 'X';
+		break;
 		case 0x06:
-			drive('S',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
+		drive('S',current_speed_l,current_speed_r);
+		com_instr = 'X';
+		break;
 		case 0x07:
-			drive('E',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
+		drive('E',current_speed_l,current_speed_r);
+		com_instr = 'X';
+		break;
 		case 0x08:
-			drive('W',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
+		drive('W',current_speed_l,current_speed_r);
+		com_instr = 'X';
+		break;
 		default:
-			stop();
-			break;
+		stop();
+		break;
 	}
-  }
-}
+}*/
