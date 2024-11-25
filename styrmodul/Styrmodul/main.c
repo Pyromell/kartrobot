@@ -29,15 +29,16 @@ Pin Description:
 Instruction Manual:
    * com_instr:
    * 0:X Stop
+   *
    * 1:N Drive forward 40 cm
    * 2:S Drive backward 40 cm
-   * 3:W Turn on the spot left (L-track backward, R-track forward)
-   * 4:E Turn on the spot right (L-track forward, R-track backward)
+   * 3:E Turn on the spot right (L-track backward, R-track forward)
+   * 4:W Turn on the spot left (L-track forward, R-track backward)
+   *
    * 5:N once for manual mode
    * 6:S once for manual mode
-   * 7:W once for manual mode
-   * 8:E once for manual mode
-
+   * 7:E once for manual mode
+   * 8:W once for manual mode
 
 The speed is not adjustable by com. module at the moment
    * current_speed (l & r):
@@ -55,6 +56,15 @@ int main(void)
   
   uint8_t current_speed_l = 1, current_speed_r = 1;
 
+	while (1)
+	{
+		UART_Transmit_Sen('G');
+		
+		for (int j = 0; j < 99; ++j)
+		for (int i = 0; i < 9999; ++i)
+		asm("NOP");
+	}
+
   while(1)
   {
 	switch(com_instr) {
@@ -64,22 +74,18 @@ int main(void)
 		case 0x01:
 			drive_40_cm('N');
 			com_instr = 'X';
-			UART_Transmit_Com('D');
 			break;
 		case 0x02:
 			drive_40_cm('S');
 			com_instr = 'X';
-			UART_Transmit_Com('D');
 			break;
 		case 0x03:
-			drive_turn('W');
-			com_instr = 'X';
-			UART_Transmit_Com('D');
-			break;
-		case 0x04:
 			drive_turn('E');
 			com_instr = 'X';
-			UART_Transmit_Com('D');
+			break;
+		case 0x04:
+			drive_turn('W');
+			com_instr = 'X';
 			break;
 		case 0x05:
 			drive('N',current_speed_l,current_speed_r);
@@ -90,11 +96,11 @@ int main(void)
 			com_instr = 'X';
 			break;
 		case 0x07:
-			drive('W',current_speed_l,current_speed_r);
+			drive('E',current_speed_l,current_speed_r);
 			com_instr = 'X';
 			break;
 		case 0x08:
-			drive('E',current_speed_l,current_speed_r);
+			drive('W',current_speed_l,current_speed_r);
 			com_instr = 'X';
 			break;
 		default:
