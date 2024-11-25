@@ -5,7 +5,7 @@
 #define UBRR 103 // This equals 9600 bps
 
 // Global variables
-uint8_t drive_instr	= 0x00;
+uint8_t com_instr = 0x00;
 uint8_t transmit_data = 0x00;
 
 /***********************************
@@ -13,8 +13,10 @@ File Description:
 	This file Handles the UART without the use of ISR
 
 Pin Description:
-	Pin 14 ISR(USART0_RX) (Receive UART data)
-	Pin 15 ISR(USART0_RX) (Send UART data)
+	Pin 14 ISR(USART0_RX) (Receive UART) (com. module)
+	Pin 15 ISR(USART0_TX) (Send UART)    (com. module)
+	Pin 16 ISR(USART1_RX) (Receive UART) (sen. module)
+	Pin 17 ISR(USART1_TX) (Send UART)    (sen. module)
   
 ***********************************/
 
@@ -91,24 +93,11 @@ void UART_Transmit_Instr_Received()
 	UART_Transmit_Com('R');
 }
 
-ISR(USART1_RX_vector) 
+// This function sends a 'D' for DONE over UART0
+// This should be called each time a move instr id completed to indicate to the
+// communication module that the drive module is ready for a new drive instr
+void UART_Transmit_Instr_Done()
 {
-	// Store received instr
-	uint8_t sw = UDR1;
-	switch(sw) 
-	{
-		case 'G':
-		{
-			uint16_t data = Gyro_ReadValue();
-			UART_Transmit_Sen('G');
-			UART_Transmit_Sen(data >> 8);
-			UART_Transmit_Sen(data);
-			break;
-		}
-		default:
-			UART_Transmit_Sen(0xFF);
-			break;
-
-	}
-	
+	//UART_Transmit_C('D');
 }
+

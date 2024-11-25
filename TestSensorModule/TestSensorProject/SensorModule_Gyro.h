@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SENSORMODULE_GYRO
 #define SENSORMODULE_GYRO
 
@@ -97,9 +99,9 @@ float Gyro_ADCToFloat(uint16_t adcValue)
 	
 	int16_t angularRate = adcValue - 1024;
 
-	//	+1024 = +300 °/s						+1.0 = +300 °/s 
-	//	0	  =  0	 °/s			--->		 0.0 =  0	°/s		
-	//	-1024 = -300 °/s						-1.0 = -300 °/s
+	//	+1024 = +300 ï¿½/s						+1.0 = +300 ï¿½/s 
+	//	0	  =  0	 ï¿½/s			--->		 0.0 =  0	ï¿½/s		
+	//	-1024 = -300 ï¿½/s						-1.0 = -300 ï¿½/s
 	float rotationDegressPerSeconds = ((float)(angularRate) / 1024.0f) * 300.0f;
 
 	return rotationDegressPerSeconds;

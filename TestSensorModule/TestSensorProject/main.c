@@ -6,8 +6,8 @@
 #include "SensorModule_Gyro.h"
 #include "SensorModule_IR.h"
 #include "uart.h"
-
-
+#include "ComsStyrModule.h"
+#include "ComsControllModule.h"
 
 int main(void)
 {
@@ -39,13 +39,3 @@ int main(void)
 	PORTD = errorCode;
 	return errorCode;
 }
-
-
-//	Styrmodule comms
-//		1 byte -	Request data id
-//			-	G	:	Get gyro data
-//				3 bytes
-//					1	:	'G'
-//					2	:	high byte of Gyro data
-//					3	:	low byte of gyro data
-

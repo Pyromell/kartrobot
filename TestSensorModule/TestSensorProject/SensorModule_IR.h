@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SENSORMODULE_IR
 #define SENSORMODULE_IR
 
