@@ -22,7 +22,7 @@ previousPos = (37,37)
 while(True):
     try:
         pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        pi_socket.settimeout(3) # 3 seconds
+        pi_socket.settimeout(3) # 3 secondssssssssss
         pi_socket.connect(("10.42.0.1", 8027))
         pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         pi_socket.setblocking(0)
@@ -128,18 +128,49 @@ class Interface():
 
     def sendRight(self):
         print("Sending Right")
-        #self.command_queue = (1).to_bytes(8, 'big')
         self.command_queue = (3).to_bytes(8, 'big')
-        #self.command_queue = (1).to_bytes(8, 'big')
+        
     def sendLeft(self):
         print("Sending Left")
-        #self.command_queue = (1).to_bytes(8, 'big')
         self.command_queue = (4).to_bytes(8, 'big')
-        #self.command_queue = (1).to_bytes(8, 'big')
-
+  
+    def sendForwardShort(self):
+        print("Sending Forward Short")
+        self.command_queue = (5).to_bytes(8, 'big')
+    
+    def sendBackShort(self):
+        print("Sending Back Short")
+        self.command_queue = (6).to_bytes(8, 'big')
+    
+    def sendRightShort(self):
+        print("Sending Right")    
+        self.command_queue = (7).to_bytes(8, 'big')
+    
+    def sendLeftShort(self):
+        print("Sending Left")
+        self.command_queue = (7).to_bytes(8, 'big')
+        
     def sendManualToggle(self):
         print("Sending Manual Toggle")
-        self.command_queue = (5).to_bytes(8, 'big')
+        self.command_queue = (9).to_bytes(8, 'big')
+    def reset(self):
+        print("Exiting")
+        self.command_queue = (10).to_bytes(8, 'big')
+      
+        
+    def keyHandler(self, event):
+        print(event.char, event.keysym, event.keycode)
+        match event.char:
+            case 'w':
+                self.sendForwardShort()
+            case 's':
+                self.sendBackShort()
+            case 'a':
+                self.sendLeftShort()
+            case 'd':
+                self.sendRightShort()
+            case 'r':
+                exit()
 
     def __init__(self):
         self.tk = Tk()
@@ -177,6 +208,31 @@ class Interface():
             text="Send Manual Toggle",
             command=self.sendManualToggle,
         )
+        
+        # Short commands
+        
+        self.buttonForwardShort = Button(
+            self.buttonFrame,
+            text="Send Forward Short",
+            command=self.sendForwardShort,
+        )
+        self.buttonBackShort = Button(
+            self.buttonFrame,
+            text="Send Backwards Short",
+            command=self.sendBackShort,
+        )
+        self.buttonRightShort = Button(
+            self.buttonFrame,
+            text="Send Right Short",
+            command=self.sendRightShort,
+        )
+        self.buttonLeftShort = Button(
+            self.buttonFrame,
+            text="Send Left Short",
+            command=self.sendLeftShort,
+        )
+        
+        
         self.positionText = Text(self.buttonFrame, bg='white', width=8, height=1)
         
         self.canvas = tkinter.Canvas(self.tk, bg='grey', width=600, height=600)
@@ -192,7 +248,7 @@ class Interface():
 
         self.canvas.grid(row=0, column=0)
         
-        self.buttonFrame.bind('w', self.buttonForward)
+
         self.buttonFrame.grid(row=0, column=1)
         self.buttonStartStop.pack()
         self.buttonForward.pack()
@@ -200,6 +256,14 @@ class Interface():
         self.buttonRight.pack()
         self.buttonLeft.pack()
         self.buttonManualToggle.pack()
+        
+        self.buttonForwardShort.pack()
+        self.buttonBackShort.pack()
+        self.buttonRightShort.pack()
+        self.buttonLeftShort.pack()
+        
+        
+        
         self.positionText.pack()
         self.sensorTextBox = tkinter.Text(
             self.buttonFrame,
@@ -209,6 +273,8 @@ class Interface():
             fg='lime',
         )
         self.sensorTextBox.pack()
+        
+        self.tk.bind("<Key>", self.keyHandler)
 
         self.recieve()
         self.tk.mainloop()
