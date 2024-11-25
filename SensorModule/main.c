@@ -3,11 +3,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <float.h>
-#include "SensorModule_Gyro.h"
-#include "SensorModule_IR.h"
+#include "Gyro.h"
+#include "IR.h"
 #include "uart.h"
-#include "ComsStyrModule.h"
-#include "ComsControllModule.h"
+#include "TalkSM.h"
+#include "TalkCM.h"
 
 int main(void)
 {

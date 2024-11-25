@@ -1,7 +1,4 @@
-#pragma once
-
-#ifndef SENSORMODULE_GYRO
-#define SENSORMODULE_GYRO
+#include "Gyro.h"
 
 #define DDR_SPI DDRB
 #define PORT_SPI PORTB
@@ -241,6 +238,3 @@ uint8_t Gyro_Init()
 	return 1;
 	
 }
-
-
-#endif /* SENSORMODULE_GYRO */

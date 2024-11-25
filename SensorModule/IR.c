@@ -1,7 +1,4 @@
-#pragma once
-
-#ifndef SENSORMODULE_IR
-#define SENSORMODULE_IR
+#include "IR.h"
 
 #define VREF 5.0f
 //	ADC conversion value is 10 bits
@@ -92,10 +89,6 @@ float IR_ConvertADC(uint16_t adcValue)
 	}
 	
 	return 0.0f;
-	
-
-	
-	
 }
 
 
@@ -118,7 +111,7 @@ uint16_t IR_ReadADC(uint8_t sensorIndex)
 	ADC_l = ADC_l >> 6;
 	
 	uint16_t ADC_done = ADC_h + ADC_l;
-	return ADC_done;//ReadSensor_IR_ToDistance_Temp(ADC_done);
+	return ADC_done;
 
 }
 
@@ -128,6 +121,3 @@ float IR_ReadDistance_CM(uint8_t sensorIndex)
 	float distanceCM = IR_ConvertADC(adcValue);
 	return distanceCM;
 }
-
-
-#endif /* SENSORMODULE_IR_H_ */
