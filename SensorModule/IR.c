@@ -5,12 +5,12 @@
 #define ADC_MaxValue 1024
 
 #define IR_PORT PORTA
-#define IR_PIN0 0
-#define IR_PIN1 1
-#define IR_PIN2 2
-#define IR_PIN3 3
-#define IR_PIN4 4
-#define IR_PIN5 5
+#define IR_PIN0 0	//	front-right
+#define IR_PIN1 1	//	front left
+#define IR_PIN2 2	//	front middle
+#define IR_PIN3 3	//	back right
+#define IR_PIN4 4	//	back left
+#define IR_PIN5 5	//	back middle
 
 #define IR_dataBuffer_length 6
 int16_t IR_dataBuffer[IR_dataBuffer_length];
@@ -24,27 +24,21 @@ uint16_t IR_ReadValue(uint8_t sensorIndex)
 	return IR_dataBuffer[sensorIndex];
 }
 
-void IR_ADC_start(uint8_t sensorPinIndex)
-{
-	ADMUX &= 11100000;
-	ADMUX |= 11100000 & sensorPinIndex;
-	ADCSRA = 0b11000000;
-}
-
 uint8_t IR_Init()
 {
 	PORTA = 0b00000000;
 	DDRA  = 0b00000000;
-	// bit 7-6 vref, 5 left or right shifted, 4-0 MUX
-	ADMUX = 0b11100000;
-	
-	//bit 7 enable, 6 start conversion, 4 ADC done flag (Read only)
-	ADCSRA = 0b10000000;
-	
-	
+	ADMUX = (1 << REFS0);
+	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 	return 1;
-	
 }
+
+void IR_ADC_start(uint8_t sensorPinIndex)
+{
+	ADMUX = (ADMUX & 0b11100000) | sensorPinIndex;
+	ADCSRA |= (1 << ADSC);
+}
+
 
 /*
 	6cm = 3.15
@@ -114,15 +108,9 @@ uint16_t IR_ReadADC(uint8_t sensorIndex)
 	
 	ADCSRA |= (1<<ADIF);
 
-	uint16_t ADC_l = ADCL;
-	uint16_t ADC_h = ADCH;
-	
 
-	ADC_h = ADC_h << 2;
-	ADC_l = ADC_l >> 6;
-	
-	uint16_t ADC_done = ADC_h + ADC_l;
-	return ADC_done;
+	uint16_t adcValue = ADC;
+	return adcValue;
 
 }
 
