@@ -31,6 +31,9 @@ currentDirection = Direction.NORTH
 autoMode = False
 
 
+
+
+
 mapData: list[list[bytes]] = [
     [SquareState.UNKNOWN for _ in range(75)]
     for _ in range(75)
@@ -169,7 +172,30 @@ def get_simulated_data() -> list[int]:
                 fakeSensorData.append(255)
     return fakeSensorData
 
-#def dijkstra(start: tuple [int], tar: tuple[int, int]) -> tuple[int, int])
+
+# Graph = list[list[tuple]] = [tuple[tuple[int, int], bool] for _ in range(75) for _ in range(75)]
+# #Tar startruta, målruta och mapdata som argument
+# def dijkstra(s: tuple[int,int], t: tuple[int, int]) -> LifoQueue[tuple[tuple[int, int], bool]]:
+    
+#     # 75x75 of tuple: (mapData[XX][YY], VISITED = true/false)
+    
+    
+#     shortestPath: LifoQueue[tuple[tuple[int, int], bool]] = LifoQueue()
+
+#     for row in len(75):
+#         for col in len(75):
+#             Graph[s] = (s,True)
+#             # if neighborlist == empty -> return, else:
+#             # for each neighbor[1] == false: sätt true, lägg till i path, getNeighbours till neighbor
+            
+# def getNeighbours(sq = tuple[int,int]):
+    
+    # returna lista med alla neighbors till sq i Graph
+             
+            
+            
+        
+    
 
 
 def flood(goal: tuple[int, int]) -> Direction:
@@ -178,15 +204,16 @@ def flood(goal: tuple[int, int]) -> Direction:
     floodQueue.put((robotPosition, []))
 
     while not flood.empty():
-        next_square, path_there = floodQueue.pop()
-        floodVisited.put(next_square)
-        for sq, direction in adjacentSquares(next_square):
+        nextSquare, path_there = floodQueue.pop()
+        floodVisited.put(nextSquare)
+        for sq, direction in adjacentSquares(nextSquare):
             path_there.append(direction)
             if sq not in visitedSquares and mapData[sq] == SquareState.EMPTY:
                 floodQueue.put(sq, path_there)
                 if sq == goal:
                     return path_there[0]
             path_there.pop()
+            
 
 
 def adjacentSquares() -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
@@ -197,15 +224,19 @@ def adjacentSquares() -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]
         (robotPosition[0] - 1, robotPosition[1]), Direction.WEST,
     )
 
+# Init queue
 queue: LifoQueue[tuple[int, int]] = LifoQueue()
+queue.put((robotPosition[0], robotPosition[1] - 1)) # start
 visitedSquares: set[tuple[int, int]] = set()
-def pathfind_empty():
-    queue.put((robotPosition[0], robotPosition[1] - 1))
 
-    next_square = queue.get()
-    print("next square", next_square)
-    while robotPosition != next_square:
-        command = flood(next_square)
+# Hitta nästa ruta att åka till
+def pathfind_empty():
+
+    nextSquare = queue.get()
+    
+    print("next square", nextSquare)
+    while robotPosition != nextSquare:
+        command = flood(nextSquare)
         print("command", command)
         visitedSquares.add(robotPosition)
         # TODO: Convert direction to command
@@ -419,14 +450,14 @@ def main() -> int:
                             print("Broken network connection")
                             break
                     driverReady = get_driver_data()
-                    # sensorData = get_simulated_data()
-                    sensorData = get_sensor_data()
+                    sensorData = get_simulated_data()
+                    #sensorData = get_sensor_data()
                     if driverReady:
                         if sensorData:
                             update_map(sensorData)
                     # TODO: Wait updating interface until new square?
                     send_sensor_data_to_interface(conn, sensorData)
-                    # pathfind_empty()
+                    pathfind_empty()
 
     except KeyboardInterrupt:
         if sensor_ttyUSB.is_open:
