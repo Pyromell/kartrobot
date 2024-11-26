@@ -49,6 +49,7 @@ client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 interface_ready_for_data = False
 
+driverReady: bool = False
 
 driver_ttyUSB = serial.Serial(
     port='/dev/ttyUSB0',
@@ -56,7 +57,7 @@ driver_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.03,
+    timeout=0.07,
 )
 sensor_ttyUSB = serial.Serial(
     port='/dev/ttyUSB1',
@@ -64,14 +65,14 @@ sensor_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.03,
+    timeout=0.07,
 )
 
 try:
     client_socket.bind(('0.0.0.0', 8027))
 except socket.error as message:
-    # print(message)
-    sys.exit()
+    print(message)
+    sys.exit(8)
 
 client_socket.listen(9)
 
@@ -203,26 +204,46 @@ def flood(goal: tuple[int, int]) -> Direction:
     floodVisited: set[tuple[int, int]] = set()
     floodQueue.put((robotPosition, []))
 
-    while not flood.empty():
-        nextSquare, path_there = floodQueue.pop()
-        floodVisited.put(nextSquare)
-        for sq, direction in adjacentSquares(nextSquare):
+    print("GOAL", goal)
+
+    while not floodQueue.empty():
+        next_square, path_there = floodQueue.get()
+        floodVisited.add(next_square)
+        for sq, direction in adjacentSquares(next_square):
+            print("ADJSQ:", sq)
             path_there.append(direction)
-            if sq not in visitedSquares and mapData[sq] == SquareState.EMPTY:
+            pp(mapData[sq[1]][sq[0]])
+            if sq not in visitedSquares and mapData[sq[1]][sq[0]] == SquareState.EMPTY:
                 floodQueue.put(sq, path_there)
                 if sq == goal:
+                    print("RETURNING FROM FLOOD", path_there)
                     return path_there[0]
             path_there.pop()
             
 
 
-def adjacentSquares() -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-    return (
-        (robotPosition[0], robotPosition[1] - 1), Direction.NORTH,
-        (robotPosition[0] + 1, robotPosition[1]), Direction.EAST,
-        (robotPosition[0], robotPosition[1] + 1), Direction.SOUTH,
-        (robotPosition[0] - 1, robotPosition[1]), Direction.WEST,
-    )
+def adjacentSquares(pos: tuple[int, int]) -> list[tuple[int, int]]:
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
+    return [
+        ((pos[0], pos[1] - 1), Direction.NORTH),
+        ((pos[0] + 1, pos[1]), Direction.EAST),
+        ((pos[0], pos[1] + 1), Direction.SOUTH),
+        ((pos[0] - 1, pos[1]), Direction.WEST),
+    ]
+
+# class commands(Enum):
+#     FORWARD = 1
+
+
+def directionToCommand(direction: Direction) -> int:
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
+    # TODO: Can drive backwards if more efficient
+    if direction < currentDirection:
+        return 4
+    elif direction > currentDirection:
+        return 3
+    else:
+        return 1
 
 # Init queue
 queue: LifoQueue[tuple[int, int]] = LifoQueue()
@@ -231,30 +252,60 @@ visitedSquares: set[tuple[int, int]] = set()
 
 # Hitta nästa ruta att åka till
 def pathfind_empty():
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
+    # TODO: It gets stuck here:
+    print("before...")
+    next_square = queue.get()
+    print("after...")
 
-    nextSquare = queue.get()
-    
-    print("next square", nextSquare)
-    while robotPosition != nextSquare:
-        command = flood(nextSquare)
-        print("command", command)
-        visitedSquares.add(robotPosition)
-        # TODO: Convert direction to command
-        uart_send(command)
-    for adjacentSquare in adjacentSquares(nextSquare):
-        if adjacentSquare not in visitedSquares and mapData[adjacentSquare] == SquareState.EMPTY:
-            queue.put(adjacentSquare)
+    print("next square", next_square)
+    while robotPosition != next_square:
+        nextDirection = flood(next_square)
+        print(nextDirection, "<- NEXT DIR")
+        while True:
+            command = directionToCommand(nextDirection)
+            print("command", command)
+            visitedSquares.add(robotPosition)
+            uart_send(driver_ttyUSB, command.to_bytes(1, 'big'))
+            if command == 1:
+                while not get_driver_data():
+                    pass
+                match currentDirection:
+                    case Direction.NORTH:
+                        robotPosition = (robotPosition[0], robotPosition[1] - 1)
+                    case Direction.EAST:
+                        robotPosition = (robotPosition[0] + 1, robotPosition[1])
+                    case Direction.SOUTH:
+                        robotPosition = (robotPosition[0], robotPosition[1] + 1)
+                    case Direction.WEST:
+                        robotPosition = (robotPosition[0] - 1, robotPosition[1])
+                break
+            while not get_driver_data():
+                pass
+            if command == 3:
+                print("ROTATING RIGHT")
+                currentDirection = (currentDirection + 1) % 4
+            if command == 4:
+                print("ROTATING LEFT")
+                currentDirection = (currentDirection - 1) % 4
+    for adjSq, _ in adjacentSquares(next_square):
+        print(type(adjSq[0]), type(adjSq[1]))
+        if adjSq not in visitedSquares and mapData[adjSq[1]][adjSq[0]] == SquareState.EMPTY:
+            queue.put(adjSq)
+>>>>>>> 87b46c9 (save work)
 
 
 def get_sensor_data() -> list[int] | None:
-    sensor_ttyUSB.write((254).to_bytes(1, 'big'))
+    sensor_ttyUSB.write((253).to_bytes(1, 'big'))
     read_buf = uart_recv(sensor_ttyUSB)
     if read_buf:
         print("read " + str(len(read_buf)) + " amount of bytes from SENSOR")
-        pp(int.from_bytes(read_buf[0:2], 'big', signed = True))
-        # b1 = int.from_bytes(read_buf[0:1], 'big')
-        # b2 = int.from_bytes(read_buf[1:2], 'big')
-        # pp(b2 << 8 | b1)
+        pp(int.from_bytes(read_buf[0:1], 'big'))
+        pp(int.from_bytes(read_buf[1:2], 'big'))
+        pp(int.from_bytes(read_buf[2:3], 'big'))
+        pp(int.from_bytes(read_buf[3:4], 'big'))
+        pp(int.from_bytes(read_buf[4:5], 'big'))
+        pp(int.from_bytes(read_buf[5:6], 'big'))
         # TODO: Convert to list[int] return read_buf
     return None
 
@@ -262,7 +313,7 @@ def get_sensor_data() -> list[int] | None:
 # Split this up later
 
 def update_map(sensorData: list[int]) -> None:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     delta = []
     match currentDirection:
         case Direction.NORTH:
@@ -291,7 +342,7 @@ def update_map(sensorData: list[int]) -> None:
 
 
 def send_sensor_data_to_interface(conn, sensorData) -> bool:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
     try:
         ready = select.select([], [conn], [], 0.01)
@@ -304,7 +355,7 @@ def send_sensor_data_to_interface(conn, sensorData) -> bool:
     return True
 
 def send_forward(short: bool) -> None:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending fram', short)
     if short:
         uart_send(driver_ttyUSB, (1).to_bytes(1, 'big'))
@@ -322,7 +373,7 @@ def send_forward(short: bool) -> None:
                robotPosition = (robotPosition[0] - 1, robotPosition[1])
 
 def send_backward(short: bool) -> None:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending back', short)
     if short:
         uart_send(driver_ttyUSB, (2).to_bytes(1, 'big'))
@@ -340,7 +391,7 @@ def send_backward(short: bool) -> None:
                robotPosition = (robotPosition[0] + 1, robotPosition[1])
 
 def turn_right(short: bool) -> None:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang höger')
     if short:
         uart_send(driver_ttyUSB, (3).to_bytes(1, 'big'))
@@ -350,7 +401,7 @@ def turn_right(short: bool) -> None:
         currentDirection = (int(currentDirection) + 1) % 4
 
 def turn_left(short: bool) -> None:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang vänster')
     if short:
         uart_send(driver_ttyUSB, (4).to_bytes(1, 'big'))
@@ -360,8 +411,9 @@ def turn_left(short: bool) -> None:
         currentDirection = (int(currentDirection) + 3) % 4
 
 def main() -> int:
-    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB
+    global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
     try:
+        queue.put((robotPosition[0], robotPosition[1] - 1))
         uart_send(driver_ttyUSB, (255).to_bytes(1, 'big'))
         uart_send(sensor_ttyUSB, (255).to_bytes(1, 'big'))
         # NOTE: This depends on the format they send data in
@@ -371,7 +423,7 @@ def main() -> int:
         elif int.from_bytes(uart_recv(sensor_ttyUSB), 'big') == 1:
             print("UART connections Should be fine?")
         else:
-            print("??")
+            print("Neither USB port sent identifier??")
         while True:
             conn, address = client_socket.accept()
             interface_ready_for_data = True
@@ -421,7 +473,8 @@ def main() -> int:
                         case -1:
                             print("Broken network connection")
                             break
-                    driverReady = get_driver_data()
+                    if not driverReady:
+                        driverReady = get_driver_data()
                     # sensorData = get_simulated_data()
                     sensorData = get_sensor_data()
                     if driverReady:
@@ -449,12 +502,15 @@ def main() -> int:
                         case -1:
                             print("Broken network connection")
                             break
-                    driverReady = get_driver_data()
+                    if not driverReady:
+                        driverReady = get_driver_data()
                     sensorData = get_simulated_data()
-                    #sensorData = get_sensor_data()
+                    # sensorData = get_sensor_data()
                     if driverReady:
+                        print("driver ready (automode)")
                         if sensorData:
                             update_map(sensorData)
+                        pathfind_empty()
                     # TODO: Wait updating interface until new square?
                     send_sensor_data_to_interface(conn, sensorData)
                     pathfind_empty()
