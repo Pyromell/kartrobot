@@ -5,7 +5,6 @@
 uint8_t wheel_marker_l = 0; // One cog index is one white 'marker' on the wheel
 uint8_t wheel_marker_r = 0;
 
-
 /*
 TCNT0 = speed_div_1
 TCNT1 = speed_div_8
@@ -91,7 +90,8 @@ void drive_40_cm(const unsigned char dir)
 	//UART_Transmit_S(''); // Starting movement
 	while(wheel_marker_l < 40 && exit_timer_2 < 2)
 	{
-		drive(dir, 2, 2);
+		drive(dir, controlled_left_speed, controlled_right_speed);
+		control_tech();
 		exit_timer++;
 		if (exit_timer == 65534)
 		{

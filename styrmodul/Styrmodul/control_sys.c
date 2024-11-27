@@ -35,6 +35,8 @@ enum wall_angle_values {
 	//invalid
 };
 
+
+/*
 uint8_t ir_data[6] = {0,0,0,0,0,0};
 
 bool walls[4] = {0,0,0,0}; // Do we have walls?
@@ -61,7 +63,7 @@ void main_flow()
 }
 
 // not finished
-/*
+
 bool ir_data_validation(uint8_t data)
 {
 	const uint8_t min_val = 0x0A;
@@ -86,6 +88,7 @@ void evaluate_walls()
 }
 */
 
+/*
 // Detect if the robot is too far away, good distance, or too close to the wall
 // This will be used in conjunction with the angle of the robot.
 // Currently it's only: close, good, far. This will prob. be changed to a variable?
@@ -282,7 +285,7 @@ void calculate_trajectory()
 		}
 	}
 }
-
+*/
 // unused
 const uint16_t arctan_table[32] = {};
 /*

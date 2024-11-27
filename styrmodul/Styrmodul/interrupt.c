@@ -3,7 +3,6 @@
 #include <avr/interrupt.h>
 
 #include "uart.c"
-
 int16_t sensor_gyro_temp = 0;
 int16_t sensor_gyro = 0;
 uint8_t byte_nr = 0;
@@ -94,6 +93,7 @@ ISR(USART1_RX_vect) {
 uint8_t timer_10_ms = 0;
 
 ISR(TIMER3_COMPA_vect) {
-	
+	controlled_left_speed = table_left_speed;		// updates the speed from control_tech to the speed that the drive functions use
+	controlled_right_speed = table_left_speed;
 	timer_10_ms++;
 }

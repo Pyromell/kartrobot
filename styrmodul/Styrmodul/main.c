@@ -2,11 +2,18 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 
-#include "interrupt.c"
+volatile uint8_t table_left_speed = 0;
+volatile uint8_t table_right_speed = 0;
+volatile uint8_t controlled_left_speed = 0;
+volatile uint8_t controlled_right_speed = 0;
+
 #include "init.c"
+#include "interrupt.c"
+#include "control_sys.c"
+#include "reglerteknik.c"
 #include "drive_functions.c"
 #include "uart.c"
-#include "control_sys.c"
+
 
 /***********************************
 Program Description:
@@ -55,6 +62,7 @@ int main(void)
   UART_Init();
   PWM_Init();
   Interrupt_Init();
+  
   
   uint8_t current_speed_l = 1, current_speed_r = 1;
 
