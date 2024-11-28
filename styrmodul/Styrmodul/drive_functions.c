@@ -91,6 +91,7 @@ void drive_40_cm(const unsigned char dir)
 	while(wheel_marker_l < 40 && exit_timer_2 < 2)
 	{
 		drive(dir, controlled_left_speed, controlled_right_speed);
+		//drive(dir, 2, 2);
 		control_tech();
 		exit_timer++;
 		if (exit_timer == 65534)
@@ -200,7 +201,7 @@ void drive_40_cm_dir(char dir)
 void drive_test()
 {
 
-	drive_turn('W');
+	drive_40_cm('N');
 	
 	for (int j = 0; j < 99; ++j)
 	for (int i = 0; i < 9999; ++i)

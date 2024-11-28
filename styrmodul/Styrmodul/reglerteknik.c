@@ -46,8 +46,8 @@
 			table_right_speed = 5;
 		}
 		else {
-			table_left_speed  = 0;   // this is used to see if something broke
-			table_right_speed = 0;
+			table_left_speed  = 2;   // this is used to see if something broke
+			table_right_speed = 2;
 		}
 		
 	}
@@ -74,7 +74,7 @@ void control_system(double angle, int wall_1, int wall_2) {
 	if (average_side_dist < max_correction && average_side_dist > min_correction) {		// Output is compared to a table to set the speed
 		output = control_scale_factor * angle*( Kp + Kd *error);						// Negative output = turn right and the the higher the output, the higher speed should be selected
 	}																					// Positive output =	turn left and the the higher the output, the higher speed should be selected
-	else if (average_side_dist <= max_correction) {										// if we are very far right in the square then we need to force it to align more to the middle
+	else if (average_side_dist >= max_correction) {										// if we are very far right in the square then we need to force it to align more to the middle
 		output = turn_left_value;
 	}
 	else if (average_side_dist <= min_correction) {										// if we are very far left in the square then we need to force it to align more to the middle

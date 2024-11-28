@@ -19,7 +19,6 @@ Pin Description:
 
 ISR(USART1_RX_vect) 
 {
-
     unsigned char inData = UDR1;
     UART_Transmit_SM(inData);
     if (inData == 'G')

@@ -13,7 +13,11 @@ volatile uint8_t controlled_right_speed = 0;
 #include "reglerteknik.c"
 #include "drive_functions.c"
 #include "uart.c"
+/*
 
+OCRnA / OCRnB 
+
+*/
 
 /***********************************
 Program Description:
@@ -62,7 +66,17 @@ int main(void)
   UART_Init();
   PWM_Init();
   Interrupt_Init();
-  
+
+  while(1) {
+	UART_Transmit_Sen('I');
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 999; ++i)
+	asm("nop");
+	for (int i = 0; i < 6; i++) {
+		UART_Transmit_Com(IR_DATA[i]);
+	}
+   }
+
   
   uint8_t current_speed_l = 1, current_speed_r = 1;
 

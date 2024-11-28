@@ -2,6 +2,17 @@
 #include <stdbool.h>
 
 // ir_data index 0-5
+
+enum ir_data_index {
+	Sen_RF,
+	Sen_LF,
+	Sen_F,
+	Sen_B,
+	Sen_LB,
+	Sen_RB
+	};
+
+/* old data structure
 enum ir_data_index {
 	Sen_F,
 	Sen_B,
@@ -10,7 +21,7 @@ enum ir_data_index {
 	Sen_RF,
 	Sen_RB
 };
-
+*/
 // walls & wall_relation & wall_angle index 0-3
 enum wall_index {
 	Wall_F,

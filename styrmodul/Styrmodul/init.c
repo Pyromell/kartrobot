@@ -39,7 +39,6 @@ void PWM_Init(void) {
 	TCCR2A	= 0x03;
 	TCCR2B	= 0x03;
 	
-	
 	/*
 	Timer Interrupt for control_sys
 	Description for interrupt:
