@@ -86,15 +86,17 @@ void drive_40_cm(const unsigned char dir)
 {
 	uint32_t exit_timer = 0; // Exit timer if something goes wrong
 	uint32_t exit_timer_2 = 0;
+	wheel_marker_l = 0;
 	
 	//UART_Transmit_S(''); // Starting movement
-	while(wheel_marker_l < 40 && exit_timer_2 < 2)
+	while(exit_timer_2 < 2)
 	{
+		control_tech();
 		drive(dir, controlled_left_speed, controlled_right_speed);
 		//drive(dir, 2, 2);
-		control_tech();
+		
 		exit_timer++;
-		if (exit_timer == 65534)
+		if (exit_timer == 300)
 		{
 			exit_timer = 0;
 			exit_timer_2++;
@@ -202,9 +204,6 @@ void drive_test()
 {
 
 	drive_40_cm('N');
-	
-	for (int j = 0; j < 99; ++j)
-	for (int i = 0; i < 9999; ++i)
 	stop();
 }
 

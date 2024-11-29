@@ -66,17 +66,15 @@ int main(void)
   UART_Init();
   PWM_Init();
   Interrupt_Init();
-
-  while(1) {
-	UART_Transmit_Sen('I');
-	for (volatile int j = 0; j < 30; ++j)
-	for (volatile int i = 0; i < 999; ++i)
-	asm("nop");
-	for (int i = 0; i < 6; i++) {
-		UART_Transmit_Com(IR_DATA[i]);
-	}
-   }
-
+ 	drive_test();
+ uint8_t i;
+ while(1) {
+	 i++;
+	 if (i != 250) {
+	drive_test();
+	 }
+ }
+	 
   
   uint8_t current_speed_l = 1, current_speed_r = 1;
 

@@ -17,7 +17,7 @@
 
 	
 	void lookup_table(const int output) {
-		if (output < 10 && output < -10) {		// lookup table for output that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
+		if (output < 10 && output > -10) {		// lookup table for output that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
 			table_left_speed  = 2;
 			table_right_speed = 2;
 		}
@@ -46,8 +46,8 @@
 			table_right_speed = 5;
 		}
 		else {
-			table_left_speed  = 2;   // this is used to see if something broke
-			table_right_speed = 2;
+			table_left_speed  = 0;   // this is used to see if something broke
+			table_right_speed = 0;
 		}
 		
 	}
@@ -116,7 +116,8 @@ double trig_angle(int wall_1, int wall_2)  {  // calculates the angle
 void control_tech() {												
 	double angle = 0;
 	int control_method = IR_validation();
-	switch(control_method) {
+	
+	switch(control_method) { 
 		case 1:  // control with left sensors
 			angle = trig_angle(IR_DATA[Sen_LF], IR_DATA[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
 			control_system(angle, IR_DATA[Sen_LF], IR_DATA[Sen_LB]);
@@ -128,6 +129,8 @@ void control_tech() {
 		default:
 			control_system(0, 25, 25);										// No valid data. Keep driving forward
 	}
+	
+	control_system(0, 25, 25);
 }
 
 

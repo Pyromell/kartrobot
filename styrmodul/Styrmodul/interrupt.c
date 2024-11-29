@@ -30,7 +30,8 @@ ISR(USART0_RX_vect) {
     // Send a receive confirmation ('R')
 	//UDR0 = 'R';
 }
-void fetch_gyro(uint8_t index) {
+
+void fetch_gyro(const uint8_t index) {
 	if (index == 1) {
 		sensor_gyro_temp = UDR1;
 	}
@@ -39,6 +40,7 @@ void fetch_gyro(uint8_t index) {
 		sensor_gyro_temp |= UDR1;
 		sensor_gyro = sensor_gyro_temp;
 		sensor = 'x';       // sensor is 'G' or 'I'
+	}
 }
 
 void fetch_IR_data(uint8_t index) {
@@ -47,20 +49,23 @@ void fetch_IR_data(uint8_t index) {
 		sensor = 'x';
 	}
 }
+
+	
+
 ISR(USART1_RX_vect) {
-  byte_nr++;
-  
   switch(sensor) {
     case 'G' :
 		fetch_gyro(byte_nr);
+		byte_nr++;
 		break;
 	case 'I' :
 		fetch_IR_data(byte_nr);
+		byte_nr++;
 		break;
     default:
 		sensor_gyro_temp = 0;
 		sensor = UDR1;
-		byte_nr = 0;
+		byte_nr = 1;
 		break;
   }  
 }
