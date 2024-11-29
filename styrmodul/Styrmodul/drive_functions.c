@@ -91,6 +91,7 @@ void drive_40_cm(const unsigned char dir)
 	//UART_Transmit_S(''); // Starting movement
 	while(exit_timer_2 < 2)
 	{
+		// not this is a test!
 		control_tech();
 		drive(dir, controlled_left_speed, controlled_right_speed);
 		//drive(dir, 2, 2);

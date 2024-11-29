@@ -77,5 +77,6 @@ uint8_t timer_10_ms = 0;
 ISR(TIMER3_COMPA_vect) {
 	controlled_left_speed = table_left_speed;		// updates the speed from control_tech to the speed that the drive functions use
 	controlled_right_speed = table_right_speed;
+	
 	timer_10_ms++;
 }

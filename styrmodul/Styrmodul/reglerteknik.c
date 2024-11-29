@@ -115,8 +115,8 @@ double trig_angle(int wall_1, int wall_2)  {  // calculates the angle
 */					
 void control_tech() {												
 	double angle = 0;
-	int control_method = IR_validation();
 	
+	int control_method = IR_validation();
 	switch(control_method) { 
 		case 1:  // control with left sensors
 			angle = trig_angle(IR_DATA[Sen_LF], IR_DATA[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
@@ -129,8 +129,6 @@ void control_tech() {
 		default:
 			control_system(0, 25, 25);										// No valid data. Keep driving forward
 	}
-	
-	control_system(0, 25, 25);
 }
 
 

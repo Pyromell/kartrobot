@@ -68,6 +68,15 @@ int main(void)
   Interrupt_Init();
  	drive_test();
  uint8_t i;
+ 
+ while(1) {
+	 UART_Transmit_Sen('I');
+	 for (volatile int j = 0; j < 40; ++j)
+	 for (volatile int i = 0; i < 9999; ++i)
+	 asm("nop");
+	UART_Transmit_Com(IR_DATA[Sen_LF]);
+ }
+ 
  while(1) {
 	 i++;
 	 if (i != 250) {
