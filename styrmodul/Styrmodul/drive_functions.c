@@ -1,7 +1,7 @@
 #pragma once
+#include "uart.c"
 
-// Global variables:
-
+// Global variables
 uint8_t wheel_marker_l = 0; // One cog index is one white 'marker' on the wheel
 uint8_t wheel_marker_r = 0;
 
@@ -91,13 +91,15 @@ void drive_40_cm(const unsigned char dir)
 	//UART_Transmit_S(''); // Starting movement
 	while(exit_timer_2 < 2)
 	{
-		// not this is a test!
+    if (exit_timer % 100 == 0)
+      UART_Transmit_Sen('I');
+
 		control_tech();
 		drive(dir, controlled_left_speed, controlled_right_speed);
 		//drive(dir, 2, 2);
 		
 		exit_timer++;
-		if (exit_timer == 300)
+		if (exit_timer == 1000)
 		{
 			exit_timer = 0;
 			exit_timer_2++;
@@ -205,7 +207,9 @@ void drive_test()
 {
 
 	drive_40_cm('N');
-	stop();
+	for (volatile int j = 0; j < 30; ++j)
+		for (volatile int i = 0; i < 9999; ++i)
+			stop();
 }
 
 void some_kind_of_test_drive()

@@ -3,6 +3,9 @@
 #include <avr/io.h>
 #include <math.h>
 
+#include "control_sys.c"
+#include "uart.c"
+
 #define	Kp 10					// higher Kp gives a faster response but can be inaccurate if to high
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define max_correction 30		// we use angle if the average side distance is within min_correction < average_side_dist < max_correction
@@ -16,52 +19,82 @@
 
 
 	
-	void lookup_table(const int output) {
-		if (output < 10 && output > -10) {		// lookup table for output that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
-			table_left_speed  = 2;
-			table_right_speed = 2;
-		}
-		else if (output < 40 && output >= 10) {
-			table_left_speed  = 3;
-			table_right_speed = 2;
-		}
-		else if (output < 80 && output >= 40) {
-			table_left_speed  = 4;
-			table_right_speed = 2;
-		}
-		else if (output < 400 && output >= 80) {
-			table_left_speed  = 5;
-			table_right_speed = 2;
-		}
-		else if (output <= -10 && output > -40) {
-			table_left_speed  = 2;
-			table_right_speed = 3;
-		}
-		else if (output <= -40 && output > -80) {
-			table_left_speed  = 2;
-			table_right_speed = 4;
-		}
-		else if (output <= -80 && output > -400) {
-			table_left_speed  = 2;
-			table_right_speed = 5;
-		}
-		else {
-			table_left_speed  = 0;   // this is used to see if something broke
-			table_right_speed = 0;
-		}
+void lookup_table(const int output) {
+	if (output < 10 && output > -10) { // lookup table for output that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
+		table_left_speed  = 2;
+		table_right_speed = 2;
+	}
+	else if (output < 40 && output >= 10) {
+		table_left_speed  = 3;
+		table_right_speed = 2;
+	}
+	else if (output < 80 && output >= 40) {
+		table_left_speed  = 4;
+		table_right_speed = 2;
+	}
+	else if (output < 400 && output >= 80) {
+		table_left_speed  = 5;
+		table_right_speed = 2;
+	}
+	else if (output <= -10 && output > -40) {
+		table_left_speed  = 2;
+		table_right_speed = 3;
+	}
+	else if (output <= -40 && output > -80) {
+		table_left_speed  = 2;
+		table_right_speed = 4;
+	}
+	else if (output <= -80 && output > -400) {
+		table_left_speed  = 2;
+		table_right_speed = 5;
+	}
+	else {
+		table_left_speed  = 0;   // this is used to see if something broke
+		table_right_speed = 0;
+	}
 		
-	}
+}
 
-	int IR_validation() {
-		if (IR_DATA[Sen_LF] >= 10 && IR_DATA[Sen_LF] <= 80 && IR_DATA[Sen_LB] >= 10 && IR_DATA[Sen_LB] <= 80) {		// checks that distance is within the interval 10 <= x <= 80
-			return 1;
-		}
-		else if (IR_DATA[Sen_RF] >= 10 && IR_DATA[Sen_RF] <= 80 && IR_DATA[Sen_RB] >= 10 && IR_DATA[Sen_RB] <= 80) {
-			return 2;
-		}
-		else
-		return 3;
+bool walls[4] = {0,0,0,0};
+
+uint8_t evaluate_walls()
+{
+  const uint8_t min_val = 15;
+  const uint8_t max_val = 60;
+
+  // Front wall
+  walls[Wall_F] = (min_val <= ir_data[Sen_F] && ir_data[Sen_F] <= max_val);
+  
+  // Back wall
+  walls[Wall_B] = (min_val <= ir_data[Sen_B] && ir_data[Sen_B] <= max_val);
+  
+  // Left wall
+  walls[Wall_L] = ((min_val <= ir_data[Sen_LF] && ir_data[Sen_LF] <= max_val) &&
+  (min_val <= ir_data[Sen_LB] && ir_data[Sen_LB] <= max_val));
+  
+  // Right wall
+  walls[Wall_R] = ((min_val <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val) &&
+  (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
+
+
+  if (walls[Wall_R])
+    return 2;
+  else if (walls[Wall_L])
+    return 1;
+  else
+    return 3;
+}
+
+int IR_validation() {
+	if (ir_data[Sen_LF] >= 10 && ir_data[Sen_LF] <= 80 && ir_data[Sen_LB] >= 10 && ir_data[Sen_LB] <= 80) {		// checks that distance is within the interval 10 <= x <= 80
+		return 1;
 	}
+	else if (ir_data[Sen_RF] >= 10 && ir_data[Sen_RF] <= 80 && ir_data[Sen_RB] >= 10 && ir_data[Sen_RB] <= 80) {
+		return 2;
+	}
+	else
+	return 3;
+}
 
 void control_system(double angle, int wall_1, int wall_2) {
 	int output = 0;
@@ -116,18 +149,20 @@ double trig_angle(int wall_1, int wall_2)  {  // calculates the angle
 void control_tech() {												
 	double angle = 0;
 	
-	int control_method = IR_validation();
+	uint8_t control_method = evaluate_walls();
 	switch(control_method) { 
 		case 1:  // control with left sensors
-			angle = trig_angle(IR_DATA[Sen_LF], IR_DATA[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
-			control_system(angle, IR_DATA[Sen_LF], IR_DATA[Sen_LB]);
+			angle = trig_angle(ir_data[Sen_LF], ir_data[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
+			control_system(angle, ir_data[Sen_LF], ir_data[Sen_LB]);
 			break;
 		case 2:  // control with right sensors
-			angle = trig_angle(IR_DATA[Sen_RB], IR_DATA[Sen_RF]);
-			control_system(angle, IR_DATA[Sen_RB], IR_DATA[Sen_RB]);		// Inverted order of arguments since each side is inverted logic 
+			angle = trig_angle(ir_data[Sen_RB], ir_data[Sen_RF]);
+			control_system(angle, ir_data[Sen_RB], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic 
 			break;
 		default:
-			control_system(0, 25, 25);										// No valid data. Keep driving forward
+	    table_left_speed  = 0;   // this is used to see if something broke
+	    table_right_speed = 0;		
+  //control_system(0, 25, 25);										// No valid data. Keep driving forward
 	}
 }
 

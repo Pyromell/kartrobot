@@ -13,7 +13,7 @@
 #define IR_PIN5 5	//	back middle
 
 #define IR_dataBuffer_length 6
-int16_t IR_dataBuffer[IR_dataBuffer_length];
+volatile int16_t IR_dataBuffer[IR_dataBuffer_length];
 
 void IR_WriteValue(uint8_t sensorIndex, uint8_t IRdata)
 {	
@@ -105,9 +105,8 @@ uint16_t IR_ReadADC(uint8_t sensorIndex)
 	//	waits until ADC conversion is done,
 	//	indicated by the ADEN
 	while( !((1<<ADIF) & ADCSRA) );
-	
-	ADCSRA |= (1<<ADIF);
 
+	ADCSRA |= (1<<ADIF);
 
 	uint16_t adcValue = ADC;
 	return adcValue;

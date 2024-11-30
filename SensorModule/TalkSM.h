@@ -33,7 +33,8 @@ ISR(USART1_RX_vect)
     {
 		for (uint8_t i = 0; i < 6; i++)
 		{
-			uint8_t IRdata = IR_ReadValue(i);
+			volatile uint8_t IRdata = IR_ReadValue(i);
+			IRdata = IRdata;
 			UART_Transmit_SM(IRdata);
 		}
     }
