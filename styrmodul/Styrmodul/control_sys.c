@@ -1,27 +1,18 @@
 #pragma once
 #include <stdbool.h>
 
+#include "interrupt.c"
+
 // ir_data index 0-5
-
 enum ir_data_index {
 	Sen_RF,
 	Sen_LF,
 	Sen_F,
-	Sen_B,
+	Sen_RB,
 	Sen_LB,
-	Sen_RB
-	};
-
-/* old data structure
-enum ir_data_index {
-	Sen_F,
-	Sen_B,
-	Sen_LF,
-	Sen_LB,
-	Sen_RF,
-	Sen_RB
+	Sen_B
 };
-*/
+
 // walls & wall_relation & wall_angle index 0-3
 enum wall_index {
 	Wall_F,
@@ -30,7 +21,7 @@ enum wall_index {
 	Wall_R
 };
 
-// wall_relation values
+// wall_relation values 0-3
 enum wall_relation_values {
 	close,
 	good,
@@ -38,18 +29,15 @@ enum wall_relation_values {
 	invalid
 };
 
-// wall_angle values
+// wall_angle values 0-3
 enum wall_angle_values {
 	parallel,
 	into,
 	away
 	//invalid
 };
-
-
 /*
-uint8_t ir_data[6] = {0,0,0,0,0,0};
-
+//volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
 bool walls[4] = {0,0,0,0}; // Do we have walls?
 uint16_t wall_relation[4] = {invalid, invalid, invalid, invalid}; // How close are we to a wall?
 uint16_t wall_angle[4] = {invalid, invalid, invalid, invalid}; // What is our angle to the wall?
@@ -57,7 +45,6 @@ uint16_t wall_angle[4] = {invalid, invalid, invalid, invalid}; // What is our an
 char dir = 'X'; // N, S, W, E
 uint8_t speed_left = 0, speed_right = 0; // Speed setting: 0 off, 1 lowest, 6 highest
 
-bool ir_data_validation(); // This function is not complete
 void evaluate_walls();
 void dist_to_wall();
 void angle_to_wall();
@@ -73,47 +60,48 @@ void main_flow()
 	drive(dir, speed_left, speed_right);
 }
 
-// not finished
-
-bool ir_data_validation(uint8_t data)
-{
-	const uint8_t min_val = 0x0A;
-	const uint8_t max_val = 0x50;
-	return (data >= min_val && data <= max_val);
-}
 
 // Function that evaluates if ir_data have detected a wall
-void evaluate_walls()
+uint8_t evaluate_walls()
 {
+	const uint8_t min_val = 10;
+	const uint8_t max_val = 80;
+
 	// Front wall
-	walls[Wall_F] = ir_data_validation(ir_data[Sen_F]);
+	walls[Wall_F] = (min_val <= ir_data[Sen_F] && ir_data[Sen_F] <= max_val);
 	
 	// Back wall
-	walls[Wall_B] = ir_data_validation(ir_data[Sen_B]);
+	walls[Wall_B] = (min_val <= ir_data[Sen_B] && ir_data[Sen_B] <= max_val);
 	
 	// Left wall
-	walls[Wall_L] = ir_data_validation(ir_data[Sen_LF]) && ir_data_validation(ir_data[Sen_LB]);
+	walls[Wall_L] = ((min_val <= ir_data[Sen_LF] && ir_data[Sen_LF] <= max_val) &&
+                    (min_val <= ir_data[Sen_LB] && ir_data[Sen_LB] <= max_val));
 	
 	// Right wall
-	walls[Wall_R] = ir_data_validation(ir_data[Sen_RF]) && ir_data_validation(ir_data[Sen_RB]);
-}
-*/
+	walls[Wall_R] = ((min_val <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val) &&
+	                (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
 
-/*
+  if (walls[Wall_L])
+    return 1;
+  else if (walls[Wall_R])
+    return 2;
+  else return 3;
+}
+
 // Detect if the robot is too far away, good distance, or too close to the wall
 // This will be used in conjunction with the angle of the robot.
 // Currently it's only: close, good, far. This will prob. be changed to a variable?
 void dist_to_wall()
 {
-	uint8_t distance_395mm = 395;
-	uint8_t distance_405mm = 405;	
+	const uint8_t distance_close = 395;
+	const uint8_t distance_far = 405;	
 
 	// Front wall
 	wall_relation[Wall_F] = invalid;
-	if (ir_data[Sen_F] > distance_405mm) {
+	if (ir_data[Sen_F] > distance_far) {
 		// Far away
 		wall_relation[Wall_F] = far;
-	} else if (ir_data[Sen_F] < distance_395mm ) {
+	} else if (ir_data[Sen_F] < distance_close ) {
 		// Too close
 		wall_relation[Wall_F] = close;
 	} else {
@@ -123,10 +111,10 @@ void dist_to_wall()
 		
 	// Back wall
 	wall_relation[Wall_B] = invalid;
-	if (ir_data[Sen_B] > distance_405mm) {
+	if (ir_data[Sen_B] > distance_far) {
 		// Far away
 		wall_relation[Wall_B] = far;
-	} else if (ir_data[Sen_B] < distance_395mm ) {
+	} else if (ir_data[Sen_B] < distance_close ) {
 		// Too close
 		wall_relation[Wall_B] = close;
 	} else {
@@ -136,10 +124,10 @@ void dist_to_wall()
 	
 	// Left wall
 	wall_relation[Wall_L] = invalid;
-	if (ir_data[Sen_LF] > distance_405mm && ir_data[Sen_LB] > distance_405mm) {
+	if (ir_data[Sen_LF] > distance_far && ir_data[Sen_LB] > distance_far) {
 		// Far away
 		wall_relation[Wall_L] = far;
-	} else if (ir_data[Sen_LF] < distance_395mm && ir_data[Sen_LB] < distance_395mm) {
+	} else if (ir_data[Sen_LF] < distance_close && ir_data[Sen_LB] < distance_close) {
 		// Too close
 		wall_relation[Wall_L] = close;
 	} else {
@@ -149,10 +137,10 @@ void dist_to_wall()
 		
 	// Right wall
 	wall_relation[Wall_R] = invalid;
-	if (ir_data[Sen_RF] > distance_405mm && ir_data[Sen_RB] > distance_405mm) {
+	if (ir_data[Sen_RF] > distance_far && ir_data[Sen_RB] > distance_far) {
 		// Far away
 		wall_relation[Wall_R] = far;
-	} else if (ir_data[Sen_RF] < distance_395mm && ir_data[Sen_RB] < distance_395mm) {
+	} else if (ir_data[Sen_RF] < distance_close && ir_data[Sen_RB] < distance_close) {
 		// Too close
 		wall_relation[Wall_R] = close;
 	} else {
@@ -297,8 +285,9 @@ void calculate_trajectory()
 	}
 }
 */
+
 // unused
-const uint16_t arctan_table[32] = {};
+//const uint16_t arctan_table[32] = {};
 /*
 (mm) (rad)
 arctan(l / h) = ang
@@ -335,7 +324,7 @@ arctan(l / h) = ang
 30: l = 155, h = 310, arctan(155 / 310) = 0.46364761 rad
 31: l = 155, h = 320, arctan(155 / 320) = 0.45106966 rad
 */
-#define Scale_Fac 16
+//#define Scale_Fac 16
 
 // unused
 /*

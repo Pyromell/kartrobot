@@ -4,10 +4,6 @@
 // Defines
 #define UBRR 103 // This equals 9600 bps
 
-// Global variables
-uint8_t com_instr = 0x00;
-uint8_t transmit_data = 0x00;
-
 /***********************************
 File Description:
 	This file Handles the UART without the use of ISR
@@ -37,51 +33,18 @@ void UART_Init(void) {
 }
 
 // Communications module
-unsigned char UART_Receive_Com(void) {
-	while ( !(UCSR0A & (1 << RXC0)) )
-	;
-	return UDR0;
-}
-
-// Communications module
 void UART_Transmit_Com(const unsigned char data) {
-	// wait for empty transmit buffer
-	while ( !(UCSR0A & (1 << UDRE0)) ) ;
-	
-	//for(int i = 0; i < 99; ++i)
-	//	asm("NOP");
-	
-	// put data into buffer
-	UDR0 = data;
-
-	// wait for the hardware to set its done flag
-	while(TXC0 == 1) ;
+	while ( !(UCSR0A & (1 << UDRE0)) ) ; // wait for empty transmit buffer
+	UDR0 = data; // put data into buffer
+	while(TXC0 == 1) ; // wait for the hardware to set its done flag
 }
 
-// Sensor module
-unsigned char UART_Receive_Sen(void) {
-	while ( !(UCSR1A & (1 << RXC1)) )
-	;
-	return UDR1;
-}
 
 // Sensor module
 void UART_Transmit_Sen(const unsigned char data) {
-	// wait for empty transmit buffer
-	while ( !(UCSR1A & (1 << UDRE1)) ) ;
-
-	// put data into buffer
-	UDR1 = data;
-
-	// wait for the hardware to set its done flag
-	while(TXC1 == 1) ;
-}
-
-void UART_Transmit_Choice(const char choice, const unsigned char data) {
-	if(choice == 'C')
-		UART_Transmit_Sen(data);
-	else if(choice == 'S')
-		UART_Transmit_Com(data);
+	while ( !(UCSR1A & (1 << UDRE1)) ) ; // wait for empty transmit buffer
+	UDR1 = data; // put data into buffer
+	while(TXC1 == 1) ; // wait for the hardware to set its done flag
 }
 
 // This function sends a 'R' for RECEIVED over UART0
@@ -98,5 +61,23 @@ void UART_Transmit_Instr_Received()
 // communication module that the drive module is ready for a new drive instr
 void UART_Transmit_Instr_Done()
 {
-	//UART_Transmit_C('D');
+	UART_Transmit_Com('D');
 }
+
+// Communications module sync. receive (OLD, async is used on ISR)
+/*
+unsigned char UART_Receive_Com(void) {
+	while ( !(UCSR0A & (1 << RXC0)) )
+	;
+	return UDR0;
+}
+*/
+
+// Sensor module sync. receive (OLD, async is used on ISR)
+/*
+unsigned char UART_Receive_Sen(void) {
+	while ( !(UCSR1A & (1 << RXC1)) )
+	;
+	return UDR1;
+}
+*/

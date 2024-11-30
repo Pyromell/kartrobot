@@ -15,17 +15,16 @@ TEMP ports:
 ***********************************/
 
 void PORT_Init(void) {
-	// low inits UART, high intis Wrooom
-	DDRD	= 0xFA;	
-	DDRB	= 0xFF; 
+	DDRD = 0xFA; // low for UART, high for PWM
+	DDRB = 0xFF; // Only used for error checking
 }
+
 void PWM_Init(void) {
 	// inits PWM interrupt
 	/*
-	0: clk I/O /(No prescaling)
-	1: clk I/O /8 (From prescaler)
+	0: clk I/O /1  (No prescaling)
+	1: clk I/O /8  (From prescaler)
 	2: clk I/O /64 (From prescaler)
-	3: clk I/O /256 (From prescaler)
 	
 	All PWM counters are from 0x00 -> 0xFF
 	*/
@@ -58,7 +57,7 @@ void PWM_Init(void) {
 	
 	TIMSK3 |= (1 << OCIE3A);
 	
-	OCR3A = 20400;
+	OCR3A = 20400; // this determines the time between interrupts
 }
 
 void Interrupt_Init()

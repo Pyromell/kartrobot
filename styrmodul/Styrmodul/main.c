@@ -66,72 +66,59 @@ int main(void)
   UART_Init();
   PWM_Init();
   Interrupt_Init();
- 	drive_test();
- uint8_t i;
- 
- while(1) {
-	 UART_Transmit_Sen('I');
-	 for (volatile int j = 0; j < 40; ++j)
-	 for (volatile int i = 0; i < 9999; ++i)
-	 asm("nop");
-	UART_Transmit_Com(IR_DATA[Sen_LF]);
- }
- 
- while(1) {
-	 i++;
-	 if (i != 250) {
-	drive_test();
-	 }
- }
-	 
   
-  uint8_t current_speed_l = 1, current_speed_r = 1;
+  while(1)
+  {
+	  drive_test();
+  }
 
-while(1)
-{
-	switch(com_instr) {
-		case 0:
-			stop();
-			break;
-		case 0x01:
-			drive_40_cm('N');
-			com_instr = 'X';
-			break;
-		case 0x02:
-			drive_40_cm('S');
-			com_instr = 'X';
-			break;
-		case 0x03:
-			drive_turn('E');
-			com_instr = 'X';
-			break;
-		case 0x04:
-			drive_turn('W');
-			com_instr = 'X';
-			break;
-		case 0x05:
-			drive('N',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
-		case 0x06:
-			drive('S',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
-		case 0x07:
-			drive('E',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
-		case 0x08:
-			drive('W',current_speed_l,current_speed_r);
-			com_instr = 'X';
-			break;
-		case 0x09:
-			drive_turn('S');
-			com_instr = 'X';
-			break;
-		default:
-			stop();
-			break;
-	}
+uint8_t current_speed_l = 1, current_speed_r = 1;
+
+  while(1)
+  {
+	  switch(com_instr) {
+		  case 0:
+			  stop();
+			  break;
+		  case 0x01:
+			  drive_40_cm('N');
+			  com_instr = 'X';
+			  break;
+		  case 0x02:
+			  drive_40_cm('S');
+			  com_instr = 'X';
+			  break;
+		  case 0x03:
+			  drive_turn('E');
+			  com_instr = 'X';
+			  break;
+		  case 0x04:
+			  drive_turn('W');
+			  com_instr = 'X';
+			  break;
+		  case 0x05:
+			  drive('N',current_speed_l,current_speed_r);
+			  com_instr = 'X';
+			  break;
+		  case 0x06:
+			  drive('S',current_speed_l,current_speed_r);
+			  com_instr = 'X';
+			  break;
+		  case 0x07:
+			  drive('E',current_speed_l,current_speed_r);
+			  com_instr = 'X';
+			  break;
+		  case 0x08:
+			  drive('W',current_speed_l,current_speed_r);
+			  com_instr = 'X';
+			  break;
+		  case 0x09:
+			  drive_turn('S');
+			  com_instr = 'X';
+			  break;
+		  default:
+			  stop();
+			  break;
+	  }
   }
 }

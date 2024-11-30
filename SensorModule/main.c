@@ -20,9 +20,6 @@ int main(void)
 		errorCode = 0xFF - 1;
 
 	UART_Init();
-		
-	DDRA |= 0b00000011;
-	
 	sei();
 	
 	while (!errorCode)
