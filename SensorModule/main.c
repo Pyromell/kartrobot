@@ -8,6 +8,7 @@
 #include "uart.h"
 #include "TalkSM.h"
 #include "TalkCM.h"
+#include "ReflectSensor.h"
 
 int main(void)
  {
@@ -20,8 +21,6 @@ int main(void)
 		errorCode = 0xFF - 1;
 
 	UART_Init();
-		
-	DDRA |= 0b00000011;
 	
 	sei();
 	
