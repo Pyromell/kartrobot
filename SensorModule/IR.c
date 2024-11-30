@@ -137,8 +137,8 @@ uint8_t IR_UpdateBuffer()
 	{
 		float cm = IR_ReadDistance_CM(sensorIndex);
 		uint8_t result = (uint8_t)cm;
-		if (cm == 0)
-			cm = 255;
+		if (result == 0)
+			result = 255;
 		IR_WriteValue(sensorIndex, result);
 	}
 
