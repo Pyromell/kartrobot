@@ -56,8 +56,8 @@ uint16_t ReflectSensor_ReadADC(uint8_t sensorIndex)
 void ReflectSensor_Update()
 {
 	//	double check these pin values
-	uint16_t left = IR_ReadADC(6);
-	uint16_t right = IR_ReadADC(7);
+	uint16_t left = ReflectSensor_ReadADC(6);
+	uint16_t right = ReflectSensor_ReadADC(7);
 	if (left > HIGHVOLTAGE)
 	{
 		if (leftWasHigh == 0)
