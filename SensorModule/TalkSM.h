@@ -16,6 +16,8 @@ Pin Description:
 
 #include "uart.h"
 #include "Gyro.h"
+#include "IR.h"
+#include "ReflectSensor.h"
 
 ISR(USART1_RX_vect) 
 {
@@ -36,4 +38,13 @@ ISR(USART1_RX_vect)
 			UART_Transmit_SM(IRdata);
 		}
     }
+	else if (inData == 'R')
+	{
+		uint16_t leftValue = ReflectSensor_GetValue_Left();
+		uint16_t rightValue = ReflectSensor_GetValue_Right();
+		UART_Transmit_SM(leftValue >> 8);
+		UART_Transmit_SM(leftValue);
+		UART_Transmit_SM(rightValue >> 8);
+		UART_Transmit_SM(rightValue);			
+	}
 }

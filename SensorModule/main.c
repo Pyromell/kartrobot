@@ -8,6 +8,7 @@
 #include "uart.h"
 #include "TalkSM.h"
 #include "TalkCM.h"
+#include "ReflectSensor.h"
 
 int main(void)
  {
@@ -18,14 +19,18 @@ int main(void)
 		errorCode = 0xFF;
 	if (!Gyro_Init())
 		errorCode = 0xFF - 1;
+	if (!ReflectSensor_Init())
+		errorCode = 0xFF - 2;
 
 	UART_Init();
+	
 	sei();
 	
 	while (!errorCode)
 	{
 		Gyro_UpdateBuffer();
 		IR_UpdateBuffer();
+		ReflectSensor_Update();
 	}
 	
 	PORTD = errorCode;

@@ -27,7 +27,7 @@ uint16_t IR_ReadValue(uint8_t sensorIndex)
 uint8_t IR_Init()
 {
 	PORTA = 0b00000000;
-	DDRA  = 0b00000000;
+	DDRA &= 0b11000000;
 	ADMUX = (1 << REFS0);
 	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 	return 1;
@@ -136,8 +136,8 @@ uint8_t IR_UpdateBuffer()
 	{
 		float cm = IR_ReadDistance_CM(sensorIndex);
 		uint8_t result = (uint8_t)cm;
-		if (cm == 0)
-			cm = 255;
+		if (result == 0)
+			result = 255;
 		IR_WriteValue(sensorIndex, result);
 	}
 

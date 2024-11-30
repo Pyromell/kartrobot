@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Gyro.h"
+#include "IR.h"
+#include "ReflectSensor.h"
 #include <avr/io.h>
 
 
@@ -14,7 +16,7 @@ Pin Description:
 #define COMMAND_VALUE_IDENTIFY 255
 #define COMMAND_VALUE_REQUEST_Gyro 254
 #define COMMAND_VALUE_REQUEST_IR 253
-
+#define COMMAND_VALUE_REQUEST_Reflect 252
 
 ISR(USART0_RX_vect) 
 {
@@ -41,5 +43,14 @@ ISR(USART0_RX_vect)
 		}		
 			
 	}
-
+	else if (commandData == COMMAND_VALUE_REQUEST_Reflect)
+	{
+		uint16_t leftValue = ReflectSensor_GetValue_Left();
+		uint16_t rightValue = ReflectSensor_GetValue_Right();
+		UART_Transmit_CM(leftValue >> 8);
+		UART_Transmit_CM(leftValue);
+		UART_Transmit_CM(rightValue >> 8);
+		UART_Transmit_CM(rightValue);		
+		
+	}
 }
