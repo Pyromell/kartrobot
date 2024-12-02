@@ -227,9 +227,9 @@ uint8_t Gyro_Init()
 		asm("NOP");
 	
 	if (answer & (1 << 15))	//	if answer has a leading 1 then the instruction was rejected
-		return 0;
+		return 1;
 		
-	if (!Gyro_Calibrate())
+	if (Gyro_Calibrate())
 		return 0;
 
 

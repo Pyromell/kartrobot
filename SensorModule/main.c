@@ -17,10 +17,10 @@ int main(void)
 
 	if (!IR_Init())
 		errorCode = 0xFF;
-	if (!Gyro_Init())
+	if (!Gyro_Init())		//kolla error kod här. den fuckar lite
 		errorCode = 0xFF - 1;
-	//if (!ReflectSensor_Init())
-		//errorCode = 0xFF - 2;
+	if (!ReflectSensor_Init())
+		errorCode = 0xFF - 2;
 
 	UART_Init();
 	
@@ -30,7 +30,7 @@ int main(void)
 	{
 		Gyro_UpdateBuffer();
 		IR_UpdateBuffer();
-		//ReflectSensor_Update();
+		ReflectSensor_Update();
 	}
 	
 	PORTD = errorCode;

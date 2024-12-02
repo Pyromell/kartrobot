@@ -9,7 +9,7 @@
 #define IR_PIN1 1	//	front left
 #define IR_PIN2 2	//	front middle
 #define IR_PIN3 3	//	back right
-#define IR_PIN4 4	//	back left
+#define IR_PIN4 4	//	back left		GALPP
 #define IR_PIN5 5	//	back middle
 
 #define IR_dataBuffer_length 6
@@ -27,7 +27,7 @@ uint16_t IR_ReadValue(uint8_t sensorIndex)
 uint8_t IR_Init()
 {
 	PORTA = 0b00000000;
-	DDRA &= 0b11000000;
+	DDRA = 0b00000000;
 	ADMUX = (1 << REFS0);
 	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 	return 1;
@@ -136,8 +136,8 @@ uint8_t IR_UpdateBuffer()
 	{
 		float cm = IR_ReadDistance_CM(sensorIndex);
 		uint8_t result = (uint8_t)cm;
-		if (result == 0)
-			result = 255;
+// 		if (result == 0)
+// 			result = 255;
 		IR_WriteValue(sensorIndex, result);
 	}
 
