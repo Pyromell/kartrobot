@@ -8,8 +8,10 @@ import serial
 from enum import IntEnum
 from pprint import pp
 from random import random
-from queue import LifoQueue
+from queue import LifoQueue, Queue
 import pickle
+from math import floor
+from copy import deepcopy
 
 
 # INIT:
@@ -30,7 +32,7 @@ class SquareState(IntEnum):
 currentDirection = Direction.NORTH
 autoMode = False
 
-mapData: list[list[bytes]] = [
+mapData: list[list[SquareState]] = [
     [SquareState.UNKNOWN for _ in range(75)]
     for _ in range(75)
 ]
@@ -91,6 +93,7 @@ def get_interface_data(conn) -> int:
                 print('Disconnected')
                 return -1
             return int.from_bytes(data, 'big')
+        return -2
     except select.error:
         print("DISCONNECTED")
         sys.exit(1)
@@ -145,7 +148,7 @@ def get_simulated_data() -> list[int]:
     fakeSensorData = []
     for d in range(4):
         for distance in [1, 2]:
-            delta = (0, 0)
+            delta: list[tuple[int, int]] = []
             direction = Direction(d)
             match currentDirection:
                 case Direction.NORTH:
@@ -156,10 +159,10 @@ def get_simulated_data() -> list[int]:
                     delta = [ (0, 1), (-1, 0), (0, -1), (1, 0) ]
                 case Direction.WEST:
                     delta = [ (-1, 0), (0, -1), (1, 0), (0, 1) ]
-            checkPos = tuple(map(lambda t1, t2: t1 + t2 * distance, robotPosition, delta[d]))
+            checkPos: tuple[int, int] = tuple(map(lambda t1, t2: t1 + t2 * distance, robotPosition, delta[d]))
             try:
                 if fakeWalls[checkPos]:
-                    fakeSensorData.append(10 + (distance-1)*50 + (random() * 10.0 - 5.0))
+                    fakeSensorData.append(10 + floor((distance-1)*50 + (random() * 10.0 - 5.0)))
                     break
             except KeyError:
                 pass
@@ -168,77 +171,53 @@ def get_simulated_data() -> list[int]:
     return fakeSensorData
 
 
-# Graph = list[list[tuple]] = [tuple[tuple[int, int], bool] for _ in range(75) for _ in range(75)]
-# #Tar startruta, målruta och mapdata som argument
-# def dijkstra(s: tuple[int,int], t: tuple[int, int]) -> LifoQueue[tuple[tuple[int, int], bool]]:
-    
-#     # 75x75 of tuple: (mapData[XX][YY], VISITED = true/false)
-    
-    
-#     shortestPath: LifoQueue[tuple[tuple[int, int], bool]] = LifoQueue()
-
-#     for row in len(75):
-#         for col in len(75):
-#             Graph[s] = (s,True)
-#             # if neighborlist == empty -> return, else:
-#             # for each neighbor[1] == false: sätt true, lägg till i path, getNeighbours till neighbor
-            
-# def getNeighbours(sq = tuple[int,int]):
-    
-    # returna lista med alla neighbors till sq i Graph
-             
-            
-            
-        
-    
-
-
 def flood(goal: tuple[int, int]) -> Direction:
-    floodQueue: LifoQueue[tuple[tuple[int, int], list[Direction]]] = LifoQueue()
+    floodQueue: Queue[tuple[tuple[int, int], list[Direction]]] = Queue()
     floodVisited: set[tuple[int, int]] = set()
     floodQueue.put((robotPosition, []))
 
-    print("GOAL", goal)
-
     while not floodQueue.empty():
         next_square, path_there = floodQueue.get()
+        if next_square in floodVisited:
+            continue
         floodVisited.add(next_square)
         for sq, direction in adjacentSquares(next_square):
-            print("ADJSQ:", sq)
             path_there.append(direction)
-            pp(mapData[sq[1]][sq[0]])
-            if sq not in visitedSquares and mapData[sq[1]][sq[0]] == SquareState.EMPTY:
-                floodQueue.put(sq, path_there)
+            if sq not in floodVisited and mapData[sq[1]][sq[0]] == SquareState.EMPTY:
+                floodQueue.put((sq, deepcopy(path_there)))
                 if sq == goal:
-                    print("RETURNING FROM FLOOD", path_there)
                     return path_there[0]
             path_there.pop()
     raise Exception("unreachable (flood)")
             
 
 
-def adjacentSquares(pos: tuple[int, int]) -> list[tuple[int, int]]:
+def adjacentSquares(pos: tuple[int, int]) -> list[tuple[tuple[int, int], Direction]]:
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     return [
+        ((pos[0], pos[1] + 1), Direction.SOUTH),
         ((pos[0], pos[1] - 1), Direction.NORTH),
         ((pos[0] + 1, pos[1]), Direction.EAST),
-        ((pos[0], pos[1] + 1), Direction.SOUTH),
         ((pos[0] - 1, pos[1]), Direction.WEST),
     ]
 
-# class commands(Enum):
-#     FORWARD = 1
+class Command(IntEnum):
+    CMD_FORWARD = 1
+    CMD_BACKWARD = 2
+    CMD_TURNRIGHT = 3
+    CMD_TURNLEFT = 4
 
 
-def directionToCommand(direction: Direction) -> int:
+def directionToCommand(direction: Direction) -> Command:
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
-    # TODO: Can drive backwards if more efficient
     if direction < currentDirection:
-        return 4
+        return Command.CMD_TURNLEFT
     elif direction > currentDirection:
-        return 3
+        return Command.CMD_TURNRIGHT
+    elif abs(direction - currentDirection) == 2:
+        return Command.CMD_BACKWARD
     else:
-        return 1
+        return Command.CMD_FORWARD
 
 # Init queue
 queue: LifoQueue[tuple[int, int]] = LifoQueue()
@@ -248,22 +227,21 @@ visitedSquares: set[tuple[int, int]] = set()
 # Hitta nästa ruta att åka till
 def pathfind_empty():
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
-    # TODO: It gets stuck here:
-    return
-    print("before...")
+    if queue.empty():
+        if robotPosition != (37, 37):
+            queue.put((37, 37))
+        else:
+            print("DONE!")
+            return
     next_square = queue.get()
-    print("after...")
-
-    print("next square", next_square)
+    lastPosition = robotPosition
     while robotPosition != next_square:
-        nextDirection = flood(next_square)
-        print(nextDirection, "<- NEXT DIR")
+        nextDirection: Direction = flood(next_square)
         while True:
-            command = directionToCommand(nextDirection)
-            print("command", command)
+            command: Command = directionToCommand(nextDirection)
             visitedSquares.add(robotPosition)
             uart_send(driver_ttyUSB, command.to_bytes(1, 'big'))
-            if command == 1:
+            if command == Command.CMD_FORWARD:
                 while not get_driver_data():
                     pass
                 match currentDirection:
@@ -275,19 +253,34 @@ def pathfind_empty():
                         robotPosition = (robotPosition[0], robotPosition[1] + 1)
                     case Direction.WEST:
                         robotPosition = (robotPosition[0] - 1, robotPosition[1])
+                while not get_driver_data():
+                    pass
                 break
+            elif command == Command.CMD_BACKWARD:
+                print("BACKWARD")
+                while not get_driver_data():
+                    pass
+                match currentDirection:
+                    case Direction.NORTH:
+                        robotPosition = (robotPosition[0], robotPosition[1] + 1)
+                    case Direction.EAST:
+                        robotPosition = (robotPosition[0] - 1, robotPosition[1])
+                    case Direction.SOUTH:
+                        robotPosition = (robotPosition[0], robotPosition[1] - 1)
+                    case Direction.WEST:
+                        robotPosition = (robotPosition[0] + 1, robotPosition[1])
+                while not get_driver_data():
+                    pass
+                break
+            elif command == Command.CMD_TURNRIGHT:
+                currentDirection = Direction((currentDirection + 1) % 4)
+            elif command == Command.CMD_TURNLEFT:
+                currentDirection = Direction((currentDirection - 1) % 4)
             while not get_driver_data():
                 pass
-            if command == 3:
-                print("ROTATING RIGHT")
-                currentDirection = (currentDirection + 1) % 4
-            if command == 4:
-                print("ROTATING LEFT")
-                currentDirection = (currentDirection - 1) % 4
 
 def addAdjacent():
     for adjSq, _ in adjacentSquares(robotPosition):
-        print(type(adjSq[0]), type(adjSq[1]))
         if adjSq not in visitedSquares and mapData[adjSq[1]][adjSq[0]] == SquareState.EMPTY:
             queue.put(adjSq)
 
@@ -311,7 +304,6 @@ def get_sensor_data() -> list[int] | None:
             int.from_bytes(read_buf[4:5], 'big', signed=False),
             int.from_bytes(read_buf[5:6], 'big', signed=False),
         ]
-        # TODO: Convert to list[int] return read_buf
     return None
 
 # NOTE: Blocks for 0.2 second to get sensor data
@@ -343,7 +335,6 @@ def update_map(sensorData: list[int]) -> None:
     # TODO: Don't replace START
     mapData[lastPosition[1]][lastPosition[0]] = SquareState.EMPTY
     mapData[robotPosition[1]][robotPosition[0]] = SquareState.ROBOT
-    return []
 
 
 def send_sensor_data_to_interface(conn, sensorData) -> bool:
@@ -400,20 +391,18 @@ def turn_right(short: bool) -> None:
     print('sending svang höger')
     if short:
         uart_send(driver_ttyUSB, (3).to_bytes(1, 'big'))
-        # TODO: How do we know what direction???
     else:
         uart_send(driver_ttyUSB, (7).to_bytes(1, 'big'))
-        currentDirection = (int(currentDirection) + 1) % 4
+        currentDirection = Direction((int(currentDirection) + 1) % 4)
 
 def turn_left(short: bool) -> None:
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang vänster')
     if short:
         uart_send(driver_ttyUSB, (4).to_bytes(1, 'big'))
-        # TODO: How do we know what direction???
     else:
         uart_send(driver_ttyUSB, (8).to_bytes(1, 'big'))
-        currentDirection = (int(currentDirection) + 3) % 4
+        currentDirection = Direction((int(currentDirection) + 3) % 4)
 
 def main() -> int:
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
@@ -482,7 +471,6 @@ def main() -> int:
                         if not autoMode:
                             turn_left(True)
                     case 9:
-                        print('got manual')
                         interface_ready_for_data = True
                         autoMode = not autoMode
                         continue
@@ -499,7 +487,6 @@ def main() -> int:
                     # sensorData = get_sensor_data()
 
                     if autoMode:
-                        print("driver ready (automode)")
                         if sensorData:
                             update_map(sensorData)
                             addAdjacent();
@@ -510,9 +497,9 @@ def main() -> int:
                     send_sensor_data_to_interface(conn, sensorData)
 
     except KeyboardInterrupt:
-        if sensor_ttyUSB.is_open:
+        if sensor_ttyUSB and sensor_ttyUSB.is_open:
             sensor_ttyUSB.close()
-        if driver_ttyUSB.is_open:
+        if driver_ttyUSB and driver_ttyUSB.is_open:
             driver_ttyUSB.close()
         return 1
 
