@@ -36,16 +36,16 @@ enum wall_angle_values {
 	away
 	//invalid
 };
-/*
-//volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
-bool walls[4] = {0,0,0,0}; // Do we have walls?
+
+volatile uint8_t ir_data_2[6] = {0,0,0,0,0,0};
+bool walls_2[4] = {0,0,0,0}; // Do we have walls?
 uint16_t wall_relation[4] = {invalid, invalid, invalid, invalid}; // How close are we to a wall?
 uint16_t wall_angle[4] = {invalid, invalid, invalid, invalid}; // What is our angle to the wall?
 
 char dir = 'X'; // N, S, W, E
 uint8_t speed_left = 0, speed_right = 0; // Speed setting: 0 off, 1 lowest, 6 highest
 
-void evaluate_walls();
+void evaluate_walls_2();
 void dist_to_wall();
 void angle_to_wall();
 void calculate_trajectory();
@@ -53,7 +53,7 @@ void calculate_trajectory();
 // When new data is received. Functions to be executed:
 void main_flow()
 {
-	evaluate_walls();
+	evaluate_walls_2();
 	dist_to_wall();
 	angle_to_wall();
 	calculate_trajectory();
@@ -62,30 +62,24 @@ void main_flow()
 
 
 // Function that evaluates if ir_data have detected a wall
-uint8_t evaluate_walls()
+void evaluate_walls_2()
 {
-	const uint8_t min_val = 10;
-	const uint8_t max_val = 80;
+	const uint8_t min_val = 11;
+	const uint8_t max_val = 60;
 
 	// Front wall
-	walls[Wall_F] = (min_val <= ir_data[Sen_F] && ir_data[Sen_F] <= max_val);
+	walls_2[Wall_F] = (min_val <= ir_data_2[Sen_F] && ir_data_2[Sen_F] <= max_val);
 	
 	// Back wall
-	walls[Wall_B] = (min_val <= ir_data[Sen_B] && ir_data[Sen_B] <= max_val);
+	walls_2[Wall_B] = (min_val <= ir_data_2[Sen_B] && ir_data_2[Sen_B] <= max_val);
 	
 	// Left wall
-	walls[Wall_L] = ((min_val <= ir_data[Sen_LF] && ir_data[Sen_LF] <= max_val) &&
-                    (min_val <= ir_data[Sen_LB] && ir_data[Sen_LB] <= max_val));
+	walls_2[Wall_L] = ((min_val <= ir_data_2[Sen_LF] && ir_data_2[Sen_LF] <= max_val) &&
+	(min_val <= ir_data_2[Sen_LB] && ir_data_2[Sen_LB] <= max_val));
 	
 	// Right wall
-	walls[Wall_R] = ((min_val <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val) &&
-	                (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
-
-  if (walls[Wall_L])
-    return 1;
-  else if (walls[Wall_R])
-    return 2;
-  else return 3;
+	walls_2[Wall_R] = ((min_val <= ir_data_2[Sen_RF] && ir_data_2[Sen_RF] <= max_val) &&
+	(min_val <= ir_data_2[Sen_RB] && ir_data_2[Sen_RB] <= max_val));
 }
 
 // Detect if the robot is too far away, good distance, or too close to the wall
@@ -98,10 +92,10 @@ void dist_to_wall()
 
 	// Front wall
 	wall_relation[Wall_F] = invalid;
-	if (ir_data[Sen_F] > distance_far) {
+	if (ir_data_2[Sen_F] > distance_far) {
 		// Far away
 		wall_relation[Wall_F] = far;
-	} else if (ir_data[Sen_F] < distance_close ) {
+	} else if (ir_data_2[Sen_F] < distance_close ) {
 		// Too close
 		wall_relation[Wall_F] = close;
 	} else {
@@ -111,10 +105,10 @@ void dist_to_wall()
 		
 	// Back wall
 	wall_relation[Wall_B] = invalid;
-	if (ir_data[Sen_B] > distance_far) {
+	if (ir_data_2[Sen_B] > distance_far) {
 		// Far away
 		wall_relation[Wall_B] = far;
-	} else if (ir_data[Sen_B] < distance_close ) {
+	} else if (ir_data_2[Sen_B] < distance_close ) {
 		// Too close
 		wall_relation[Wall_B] = close;
 	} else {
@@ -124,10 +118,10 @@ void dist_to_wall()
 	
 	// Left wall
 	wall_relation[Wall_L] = invalid;
-	if (ir_data[Sen_LF] > distance_far && ir_data[Sen_LB] > distance_far) {
+	if (ir_data_2[Sen_LF] > distance_far && ir_data_2[Sen_LB] > distance_far) {
 		// Far away
 		wall_relation[Wall_L] = far;
-	} else if (ir_data[Sen_LF] < distance_close && ir_data[Sen_LB] < distance_close) {
+	} else if (ir_data_2[Sen_LF] < distance_close && ir_data_2[Sen_LB] < distance_close) {
 		// Too close
 		wall_relation[Wall_L] = close;
 	} else {
@@ -137,10 +131,10 @@ void dist_to_wall()
 		
 	// Right wall
 	wall_relation[Wall_R] = invalid;
-	if (ir_data[Sen_RF] > distance_far && ir_data[Sen_RB] > distance_far) {
+	if (ir_data_2[Sen_RF] > distance_far && ir_data_2[Sen_RB] > distance_far) {
 		// Far away
 		wall_relation[Wall_R] = far;
-	} else if (ir_data[Sen_RF] < distance_close && ir_data[Sen_RB] < distance_close) {
+	} else if (ir_data_2[Sen_RF] < distance_close && ir_data_2[Sen_RB] < distance_close) {
 		// Too close
 		wall_relation[Wall_R] = close;
 	} else {
@@ -153,58 +147,46 @@ void dist_to_wall()
 // Detect the relative angle to left and right walls
 void angle_to_wall()
 {
-	uint8_t distance_2mm = 2;
+	uint8_t valid_error = 2;
 	// Left wall
-	if (walls[Wall_L])
+	if (walls_2[Wall_L])
 	{
-		if ( (ir_data[Sen_LF] <= (ir_data[Sen_LB] + distance_2mm)) && (ir_data[Sen_LF] >= (ir_data[Sen_LB] - distance_2mm)) )
+		if ( (ir_data_2[Sen_LF] <= (ir_data_2[Sen_LB] + valid_error)) && (ir_data_2[Sen_LF] >= (ir_data_2[Sen_LB] - valid_error)) )
 			// Parallel to the wall
 			wall_angle[Wall_L] = parallel;
-		if (ir_data[Sen_LF] >= ir_data[Sen_LB])
+		if (ir_data_2[Sen_LF] >= ir_data_2[Sen_LB])
 			// angling away from the wall.
 			wall_angle[Wall_L] = away;
-		if (ir_data[Sen_LF] < ir_data[Sen_LB])
+		if (ir_data_2[Sen_LF] < ir_data_2[Sen_LB])
 			// angling into the wall.
 			wall_angle[Wall_L] = into;
-		if (ir_data_validation(ir_data[Sen_LF]) == false)
-			// Detected a husknut to the left (we left the current wall)
-			wall_angle[Wall_L] = invalid;
-		if (ir_data_validation(ir_data[Sen_LB]) == false)
-			// Detected a husknut to the left (we found a new wall)
-			wall_angle[Wall_L] = invalid;
 	}
 	
 	// Right wall
-	if (walls[Wall_R])
+	if (walls_2[Wall_R])
 	{		
-		if ( (ir_data[Sen_RF] <= (ir_data[Sen_RB] + distance_2mm)) && (ir_data[Sen_RF] >= (ir_data[Sen_RB] - distance_2mm)) )
+		if ( (ir_data_2[Sen_RF] <= (ir_data_2[Sen_RB] + valid_error)) && (ir_data_2[Sen_RF] >= (ir_data_2[Sen_RB] - valid_error)) )
 			// Parallel to the wall
 			wall_angle[Wall_R] = parallel;
-		if (ir_data[Sen_RF] >= ir_data[Sen_RB])
+		if (ir_data_2[Sen_RF] >= ir_data_2[Sen_RB])
 			// angling away from the wall.
 			wall_angle[Wall_R] = away;
-		if (ir_data[Sen_RF] < ir_data[Sen_RB])
+		if (ir_data_2[Sen_RF] < ir_data_2[Sen_RB])
 			// angling into the wall.
 			wall_angle[Wall_R] = into;
-		if (ir_data_validation(ir_data[Sen_RF]) == false)
-			// Detected a husknut to the right (we left the current wall)
-			wall_angle[Wall_R] = invalid;
-		if (ir_data_validation(ir_data[Sen_RB]) == false)
-			// Detected a husknut to the right (we found a new wall)
-			wall_angle[Wall_R] = invalid;
 	}
 }
 
 void set_trajectory(const char new_dir, const uint8_t new_left_speed, const uint8_t new_right_speed) {
 	dir = new_dir;
-    speed_left = new_left_speed;
-    speed_right = new_right_speed;
+    table_left_speed = new_left_speed;
+    table_right_speed = new_right_speed;
 }
 
 // Calculate where we should go, based on: if there is a wall, our relation and angle to it.
 void calculate_trajectory()
 {
-	if (walls[Wall_L])
+	if (walls_2[Wall_L])
 	{
 		if (wall_relation[Wall_L] == close)
 		{
@@ -244,7 +226,7 @@ void calculate_trajectory()
 		}
 	}
 	
-	if (walls[Wall_R])
+	if (walls_2[Wall_R])
 	{
 		if (wall_relation[Wall_R] == close)
 		{
@@ -284,7 +266,7 @@ void calculate_trajectory()
 		}
 	}
 }
-*/
+
 
 // unused
 //const uint16_t arctan_table[32] = {};
@@ -347,19 +329,19 @@ void calculate_angle(const char side)
 	
 	if(side == 'R')	
 	{
-		if(ir_data[Sen_RF] > ir_data[Sen_RB])
-			h = ir_data[Sen_RF] - ir_data[Sen_RB];
+		if(ir_data_2[Sen_RF] > ir_data_2[Sen_RB])
+			h = ir_data_2[Sen_RF] - ir_data_2[Sen_RB];
 		else
-			h = ir_data[Sen_RB] - ir_data[Sen_RF];
+			h = ir_data_2[Sen_RB] - ir_data_2[Sen_RF];
 		
 		ang = arctan(l / h);
 	}
 	if(side == 'L')
 	{
-		if(ir_data[Sen_LF] > ir_data[Sen_LB])
-			h = ir_data[Sen_LF] - ir_data[Sen_LB];
+		if(ir_data_2[Sen_LF] > ir_data_2[Sen_LB])
+			h = ir_data_2[Sen_LF] - ir_data_2[Sen_LB];
 		else
-			h = ir_data[Sen_LB] - ir_data[Sen_LF];
+			h = ir_data_2[Sen_LB] - ir_data_2[Sen_LF];
 		
 		ang = arctan(l / h);
 	}	

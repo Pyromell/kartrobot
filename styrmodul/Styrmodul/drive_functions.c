@@ -86,7 +86,6 @@ void drive_40_cm(const unsigned char dir)
 {
 	uint32_t exit_timer = 0; // Exit timer if something goes wrong
 	uint32_t exit_timer_2 = 0;
-	wheel_marker_l = 0;
 	
 	//UART_Transmit_S(''); // Starting movement
 	while(exit_timer_2 < 2)
@@ -94,9 +93,9 @@ void drive_40_cm(const unsigned char dir)
     if (exit_timer % 100 == 0)
       UART_Transmit_Sen('I');
 
-		control_tech();
+		//control_tech();
+		main_flow(); // control sys 2
 		drive(dir, controlled_left_speed, controlled_right_speed);
-		//drive(dir, 2, 2);
 		
 		exit_timer++;
 		if (exit_timer == 1000)
@@ -112,7 +111,7 @@ void drive_40_cm(const unsigned char dir)
 void drive_turn(const char dir)
 {
 	int32_t total_angle = 0;
-	int32_t exit_timer = 0;
+	//int32_t exit_timer = 0;
 	
 	timer_10_ms = 0;
 	sensor_gyro = 0;
@@ -205,7 +204,6 @@ void drive_40_cm_dir(char dir)
 
 void drive_test()
 {
-
 	drive_40_cm('N');
 	for (volatile int j = 0; j < 30; ++j)
 		for (volatile int i = 0; i < 9999; ++i)

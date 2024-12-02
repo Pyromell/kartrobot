@@ -6,7 +6,7 @@
 #include "control_sys.c"
 #include "uart.c"
 
-#define	Kp 10					// higher Kp gives a faster response but can be inaccurate if to high
+#define	Kp 15					// higher Kp gives a faster response but can be inaccurate if to high
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define max_correction 30		// we use angle if the average side distance is within min_correction < average_side_dist < max_correction
 #define min_correction 20		// if we are outside this interval then that means that the robotic need to control based in distance, in order to straighten out to the middle:ish of the square
@@ -14,11 +14,8 @@
 #define turn_right_value -20 
 #define control_scale_factor 10  // simply used to scale the output for the switch range case
 
-
 // the lookup table needs to calibrated!!!!!!!!!!!!!!!!!!
 
-
-	
 void lookup_table(const int output) {
 	if (output < 10 && output > -10) { // lookup table for output that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
 		table_left_speed  = 2;
@@ -32,7 +29,7 @@ void lookup_table(const int output) {
 		table_left_speed  = 4;
 		table_right_speed = 2;
 	}
-	else if (output < 400 && output >= 80) {
+	else if (output < 800 && output >= 80) {
 		table_left_speed  = 5;
 		table_right_speed = 2;
 	}
@@ -44,7 +41,7 @@ void lookup_table(const int output) {
 		table_left_speed  = 2;
 		table_right_speed = 4;
 	}
-	else if (output <= -80 && output > -400) {
+	else if (output <= -80 && output > -800) {
 		table_left_speed  = 2;
 		table_right_speed = 5;
 	}
@@ -57,9 +54,9 @@ void lookup_table(const int output) {
 
 bool walls[4] = {0,0,0,0};
 
-uint8_t evaluate_walls()
+void evaluate_walls()
 {
-  const uint8_t min_val = 15;
+  const uint8_t min_val = 11;
   const uint8_t max_val = 60;
 
   // Front wall
@@ -75,35 +72,17 @@ uint8_t evaluate_walls()
   // Right wall
   walls[Wall_R] = ((min_val <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val) &&
   (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
-
-
-  if (walls[Wall_R])
-    return 2;
-  else if (walls[Wall_L])
-    return 1;
-  else
-    return 3;
-}
-
-int IR_validation() {
-	if (ir_data[Sen_LF] >= 10 && ir_data[Sen_LF] <= 80 && ir_data[Sen_LB] >= 10 && ir_data[Sen_LB] <= 80) {		// checks that distance is within the interval 10 <= x <= 80
-		return 1;
-	}
-	else if (ir_data[Sen_RF] >= 10 && ir_data[Sen_RF] <= 80 && ir_data[Sen_RB] >= 10 && ir_data[Sen_RB] <= 80) {
-		return 2;
-	}
-	else
-	return 3;
 }
 
 void control_system(double angle, int wall_1, int wall_2) {
 	int output = 0;
-	double average_side_dist = (wall_1 + wall_2)/2;
+	//double average_side_dist = (wall_1 + wall_2)/2;
 	double error = ((wall_1 - wall_2) /15);
 	if (error < 0) {
 		error = error * -1;
 	}
 	// min/max_correction and Kp/Kd is defined at the top of this document
+	/*
 	if (average_side_dist < max_correction && average_side_dist > min_correction) {		// Output is compared to a table to set the speed
 		output = control_scale_factor * angle*( Kp + Kd *error);						// Negative output = turn right and the the higher the output, the higher speed should be selected
 	}																					// Positive output =	turn left and the the higher the output, the higher speed should be selected
@@ -116,6 +95,8 @@ void control_system(double angle, int wall_1, int wall_2) {
 	else {
 		output = 0;
 	}
+	*/ // + (20 - average_side_dist) * side * (Kp + Kd * error)
+	output = control_scale_factor * angle*( Kp + Kd *error);
 	lookup_table(output);
 }
 
@@ -146,24 +127,38 @@ double trig_angle(int wall_1, int wall_2)  {  // calculates the angle
 					and the interrupt that occurs every 10ms sets the drive controlled_left/right_speed = table_left/right_speed.
 					This is done to update that data that the drive functions used.
 */					
-void control_tech() {												
+void control_tech() {
+	evaluate_walls();
+	if(walls[Wall_R])
+	{
+		table_left_speed  = 1;
+		table_right_speed = 1;
+	}
+	else if(walls[Wall_L])
+	{
+		table_left_speed  = 2;
+		table_right_speed = 2;
+	}
+	/*
 	double angle = 0;
 	
-	uint8_t control_method = evaluate_walls();
-	switch(control_method) { 
-		case 1:  // control with left sensors
-			angle = trig_angle(ir_data[Sen_LF], ir_data[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
-			control_system(angle, ir_data[Sen_LF], ir_data[Sen_LB]);
-			break;
-		case 2:  // control with right sensors
-			angle = trig_angle(ir_data[Sen_RB], ir_data[Sen_RF]);
-			control_system(angle, ir_data[Sen_RB], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic 
-			break;
-		default:
-	    table_left_speed  = 0;   // this is used to see if something broke
-	    table_right_speed = 0;		
-  //control_system(0, 25, 25);										// No valid data. Keep driving forward
+	
+	if (walls[Wall_L]) // control with left sensors
+	{
+		angle = trig_angle(ir_data[Sen_LB], ir_data[Sen_LF]);			// calculate angle, negative angle means turn right, positive angle means turn left
+		control_system(angle, ir_data[Sen_LB], ir_data[Sen_LF]);
 	}
+	else if (walls[Wall_R]) // control with left sensors
+	{
+		angle = trig_angle(ir_data[Sen_RB], ir_data[Sen_RF]);
+		control_system(angle, ir_data[Sen_RB], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic
+	}
+	else
+	{
+		table_left_speed  = 0;   // this is used to see if something broke
+		table_right_speed = 0;
+	}*/
+  //control_system(0, 25, 25);										// No valid data. Keep driving forward
 }
 
 
