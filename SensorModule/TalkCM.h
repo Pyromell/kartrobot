@@ -20,7 +20,6 @@ Pin Description:
 
 ISR(USART0_RX_vect) 
 {
-
 	uint8_t commandData = UART_Receive_CM();
 	if (commandData == COMMAND_VALUE_IDENTIFY)
 	{

@@ -57,7 +57,6 @@ void main_flow()
 	dist_to_wall();
 	angle_to_wall();
 	calculate_trajectory();
-	drive(dir, speed_left, speed_right);
 }
 
 
@@ -80,6 +79,9 @@ void evaluate_walls_2()
 	// Right wall
 	walls_2[Wall_R] = ((min_val <= ir_data_2[Sen_RF] && ir_data_2[Sen_RF] <= max_val) &&
 	(min_val <= ir_data_2[Sen_RB] && ir_data_2[Sen_RB] <= max_val));
+	
+	walls_2[Wall_B] = 0;
+	walls_2[Wall_F] = 0;
 }
 
 // Detect if the robot is too far away, good distance, or too close to the wall
@@ -87,8 +89,8 @@ void evaluate_walls_2()
 // Currently it's only: close, good, far. This will prob. be changed to a variable?
 void dist_to_wall()
 {
-	const uint8_t distance_close = 395;
-	const uint8_t distance_far = 405;	
+	const uint8_t distance_close = 19;
+	const uint8_t distance_far = 21;
 
 	// Front wall
 	wall_relation[Wall_F] = invalid;
