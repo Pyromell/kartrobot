@@ -30,10 +30,6 @@ class SquareState(IntEnum):
 currentDirection = Direction.NORTH
 autoMode = False
 
-
-
-
-
 mapData: list[list[bytes]] = [
     [SquareState.UNKNOWN for _ in range(75)]
     for _ in range(75)
@@ -43,9 +39,6 @@ mapData[38][37] = SquareState.START
 # NOTE: (x, y)
 lastPosition: tuple[int, int] = (37, 37)
 robotPosition: tuple[int, int] = (37, 37)
-
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 interface_ready_for_data = False
 
@@ -57,7 +50,7 @@ driver_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.07,
+    timeout=0.1,
 )
 sensor_ttyUSB = serial.Serial(
     port='/dev/ttyUSB1',
@@ -65,16 +58,8 @@ sensor_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.07,
+    timeout=0.1,
 )
-
-try:
-    client_socket.bind(('0.0.0.0', 8027))
-except socket.error as message:
-    print(message)
-    sys.exit(8)
-
-client_socket.listen(9)
 
 
 def uart_send(ttyUSB: serial.Serial, data: bytes):
@@ -85,6 +70,7 @@ def uart_send(ttyUSB: serial.Serial, data: bytes):
 
 def uart_recv(ttyUSB) -> bytes:
    read_buf = ttyUSB.read(256)
+   print("UART RECV", read_buf)
    return read_buf
 
 # NOTE: Blocks for 0.2 second trying to read data
@@ -219,6 +205,7 @@ def flood(goal: tuple[int, int]) -> Direction:
                     print("RETURNING FROM FLOOD", path_there)
                     return path_there[0]
             path_there.pop()
+    raise Exception("unreachable (flood)")
             
 
 
@@ -254,6 +241,7 @@ visitedSquares: set[tuple[int, int]] = set()
 def pathfind_empty():
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
     # TODO: It gets stuck here:
+    return
     print("before...")
     next_square = queue.get()
     print("after...")
@@ -305,6 +293,14 @@ def get_sensor_data() -> list[int] | None:
         pp(int.from_bytes(read_buf[3:4], 'big'))
         pp(int.from_bytes(read_buf[4:5], 'big'))
         pp(int.from_bytes(read_buf[5:6], 'big'))
+        return [
+            int.from_bytes(read_buf[0:1], 'big'),
+            int.from_bytes(read_buf[1:2], 'big'),
+            int.from_bytes(read_buf[2:3], 'big'),
+            int.from_bytes(read_buf[3:4], 'big'),
+            int.from_bytes(read_buf[4:5], 'big'),
+            int.from_bytes(read_buf[5:6], 'big'),
+        ]
         # TODO: Convert to list[int] return read_buf
     return None
 
@@ -423,96 +419,52 @@ def main() -> int:
             print("UART connections Should be fine?")
         else:
             print("Neither USB port sent identifier??")
+
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            client_socket.bind(('0.0.0.0', 8027))
+        except socket.error as message:
+            print(message)
+            sys.exit(8)
+        client_socket.listen(9)
         while True:
             conn, address = client_socket.accept()
             interface_ready_for_data = True
-            #interfaceCommand = get_interface_data(conn)
             print('Got new connection')
             while True:
-                if not autoMode:
-                    interfaceCommand = get_interface_data(conn)
-                    match interfaceCommand:
-                        case 0:
-                            print('sending Start/Stop!')
-                            uart_send(driver_ttyUSB, (0).to_bytes(1, 'big'))
-                            interface_ready_for_data = True
-                        case 1:
-                            send_forward(False)
-                            interface_ready_for_data = True
-                        case 2:
-                            send_backward(False)
-                            interface_ready_for_data = True
-                        case 3:
-                            turn_right(False)
-                            interface_ready_for_data = True
-                        case 4:
-                            turn_left(False)
-                            interface_ready_for_data = True
-                        case 5:
-                            send_forward(True)
-                            interface_ready_for_data = True
-                        case 6:
-                            send_backward(True)
-                            interface_ready_for_data = True
-                        case 7:
-                            turn_right(True)
-                            interface_ready_for_data = True
-                        case 8:
-                            turn_left(True)
-                            interface_ready_for_data = True
-                        case 9:
-                            print('got autonom')
-                            uart_send(driver_ttyUSB, (5).to_bytes(1, 'big'))
-                            interface_ready_for_data = True
-                            autoMode = True
-                        case 10:
-                            sys.exit(0)
-                        case 255:
-                            interface_ready_for_data = True
-                        case -1:
-                            print("Broken network connection")
-                            break
-                    if not driverReady:
-                        driverReady = get_driver_data()
+                interfaceCommand = get_interface_data(conn)
+                match interfaceCommand:
+                    case 1:
+                        interface_ready_for_data = True
+                    case 2:
+                        interface_ready_for_data = True
+                    case 3:
+                        interface_ready_for_data = True
+                    case 4:
+                        interface_ready_for_data = True
+                    case 5:
+                        print('got manual')
+                        interface_ready_for_data = True
+                        autoMode = not autoMode
+                    case 255:
+                        interface_ready_for_data = True
+                    case -1:
+                        print("Broken network connection")
+                        break
+                if not driverReady:
+                    driverReady = get_driver_data()
+
+                if driverReady:
                     # sensorData = get_simulated_data()
                     sensorData = get_sensor_data()
-                    if driverReady:
-                        if sensorData:
-                            update_map(sensorData)
+
+                    print("driver ready (automode)")
+                    if sensorData:
+                        update_map(sensorData)
                     # TODO: Wait updating interface until new square?
-                    send_sensor_data_to_interface(conn, sensorData)
-                elif autoMode:
-                    interfaceCommand = get_interface_data(conn)
-                    match interfaceCommand:
-                        case 1:
-                            interface_ready_for_data = True
-                        case 2:
-                            interface_ready_for_data = True
-                        case 3:
-                            interface_ready_for_data = True
-                        case 4:
-                            interface_ready_for_data = True
-                        case 5:
-                            print('got manual')
-                            interface_ready_for_data = True
-                            autoMode = False
-                        case 255:
-                            interface_ready_for_data = True
-                        case -1:
-                            print("Broken network connection")
-                            break
-                    if not driverReady:
-                        driverReady = get_driver_data()
-                    sensorData = get_simulated_data()
-                    # sensorData = get_sensor_data()
-                    if driverReady:
-                        print("driver ready (automode)")
-                        if sensorData:
-                            update_map(sensorData)
-                        pathfind_empty()
-                    # TODO: Wait updating interface until new square?
-                    send_sensor_data_to_interface(conn, sensorData)
                     pathfind_empty()
+                    send_sensor_data_to_interface(conn, sensorData)
 
     except KeyboardInterrupt:
         if sensor_ttyUSB.is_open:
