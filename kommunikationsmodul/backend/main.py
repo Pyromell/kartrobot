@@ -50,7 +50,7 @@ driver_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.1,
+    timeout=0.03,
 )
 sensor_ttyUSB = serial.Serial(
     port='/dev/ttyUSB1',
@@ -58,7 +58,7 @@ sensor_ttyUSB = serial.Serial(
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
-    timeout=0.1,
+    timeout=0.03,
 )
 
 
@@ -75,7 +75,7 @@ def uart_recv(ttyUSB) -> bytes:
 
 # NOTE: Blocks for 0.2 second trying to read data
 def get_interface_data(conn) -> int:
-    ready = select.select([conn], [], [], 0.01)
+    ready = select.select([conn], [], [], 0)
     try:
         if ready[0]:
             data = conn.recv(64)
@@ -276,7 +276,9 @@ def pathfind_empty():
             if command == 4:
                 print("ROTATING LEFT")
                 currentDirection = (currentDirection - 1) % 4
-    for adjSq, _ in adjacentSquares(next_square):
+
+def addAdjacent():
+    for adjSq, _ in adjacentSquares(robotPosition):
         print(type(adjSq[0]), type(adjSq[1]))
         if adjSq not in visitedSquares and mapData[adjSq[1]][adjSq[0]] == SquareState.EMPTY:
             queue.put(adjSq)
@@ -287,19 +289,19 @@ def get_sensor_data() -> list[int] | None:
     read_buf = uart_recv(sensor_ttyUSB)
     if read_buf:
         print("read " + str(len(read_buf)) + " amount of bytes from SENSOR")
-        pp(int.from_bytes(read_buf[0:1], 'big'))
-        pp(int.from_bytes(read_buf[1:2], 'big'))
-        pp(int.from_bytes(read_buf[2:3], 'big'))
-        pp(int.from_bytes(read_buf[3:4], 'big'))
-        pp(int.from_bytes(read_buf[4:5], 'big'))
-        pp(int.from_bytes(read_buf[5:6], 'big'))
+        pp(int.from_bytes(read_buf[0:1], 'big', signed=False))
+        pp(int.from_bytes(read_buf[1:2], 'big', signed=False))
+        pp(int.from_bytes(read_buf[2:3], 'big', signed=False))
+        pp(int.from_bytes(read_buf[3:4], 'big', signed=False))
+        pp(int.from_bytes(read_buf[4:5], 'big', signed=False))
+        pp(int.from_bytes(read_buf[5:6], 'big', signed=False))
         return [
-            int.from_bytes(read_buf[0:1], 'big'),
-            int.from_bytes(read_buf[1:2], 'big'),
-            int.from_bytes(read_buf[2:3], 'big'),
-            int.from_bytes(read_buf[3:4], 'big'),
-            int.from_bytes(read_buf[4:5], 'big'),
-            int.from_bytes(read_buf[5:6], 'big'),
+            int.from_bytes(read_buf[0:1], 'big', signed=False),
+            int.from_bytes(read_buf[1:2], 'big', signed=False),
+            int.from_bytes(read_buf[2:3], 'big', signed=False),
+            int.from_bytes(read_buf[3:4], 'big', signed=False),
+            int.from_bytes(read_buf[4:5], 'big', signed=False),
+            int.from_bytes(read_buf[5:6], 'big', signed=False),
         ]
         # TODO: Convert to list[int] return read_buf
     return None
@@ -340,7 +342,7 @@ def send_sensor_data_to_interface(conn, sensorData) -> bool:
     global interface_ready_for_data, robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
     try:
-        ready = select.select([], [conn], [], 0.01)
+        ready = select.select([], [conn], [], 0)
         if interface_ready_for_data and ready[1]:
             conn.sendall(pickled_data)
             interface_ready_for_data = False
@@ -435,18 +437,47 @@ def main() -> int:
             while True:
                 interfaceCommand = get_interface_data(conn)
                 match interfaceCommand:
+                    case 0:
+                        interface_ready_for_data = True
+                        if not autoMode:
+                            uart_send(driver_ttyUSB, (1).to_bytes(1, 'big'))
                     case 1:
                         interface_ready_for_data = True
+                        if not autoMode:
+                            send_forward(False)
                     case 2:
                         interface_ready_for_data = True
+                        if not autoMode:
+                            send_backward(False)
                     case 3:
                         interface_ready_for_data = True
+                        if not autoMode:
+                            turn_right(False)
                     case 4:
                         interface_ready_for_data = True
+                        if not autoMode:
+                            turn_left(False)
                     case 5:
+                        interface_ready_for_data = True
+                        if not autoMode:
+                            send_forward(True)
+                    case 6:
+                        interface_ready_for_data = True
+                        if not autoMode:
+                            send_backward(True)
+                    case 7:
+                        interface_ready_for_data = True
+                        if not autoMode:
+                            turn_right(True)
+                    case 8:
+                        interface_ready_for_data = True
+                        if not autoMode:
+                            turn_left(True)
+                    case 9:
                         print('got manual')
                         interface_ready_for_data = True
                         autoMode = not autoMode
+                        continue
                     case 255:
                         interface_ready_for_data = True
                     case -1:
@@ -456,14 +487,18 @@ def main() -> int:
                     driverReady = get_driver_data()
 
                 if driverReady:
-                    # sensorData = get_simulated_data()
-                    sensorData = get_sensor_data()
+                    sensorData = get_simulated_data()
+                    # sensorData = get_sensor_data()
 
-                    print("driver ready (automode)")
-                    if sensorData:
+                    if autoMode:
+                        print("driver ready (automode)")
+                        if sensorData:
+                            update_map(sensorData)
+                            addAdjacent();
+                            pathfind_empty()
+                        # TODO: Wait updating interface until new square?
+                    else:
                         update_map(sensorData)
-                    # TODO: Wait updating interface until new square?
-                    pathfind_empty()
                     send_sensor_data_to_interface(conn, sensorData)
 
     except KeyboardInterrupt:
