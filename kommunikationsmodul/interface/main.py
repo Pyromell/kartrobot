@@ -15,7 +15,6 @@ from typing import Optional
 # pi_socket.connect(("10.42.0.1", 8027))
 # pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 # pi_socket.setblocking(0)
-
 previousPos = (37, 37)
 
 
@@ -25,8 +24,7 @@ while (True):
         # pi_socket.settimeout(3)
         pi_socket.connect(("10.42.0.1", 8027))
         pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        pi_socket.setblocking(0)
-        # pi_socket.send((0).to_bytes(1, 'big'))
+        #pi_socket.setblocking(0)
         break
     except:
         print("Anslut till kartrobot07...")
@@ -46,8 +44,8 @@ class Interface():
     command_queue: Optional[bytes] = None
 
     def recieve(self):
-        ready = select.select([pi_socket], [], [], 0)
-        if ready[0]:
+        ready = select.select([pi_socket], [pi_socket], [], 0)
+        if ready[0] and ready[1]:
             self.buffer += pi_socket.recv(1024)
             try:
                 messageData = pickle.loads(self.buffer)
