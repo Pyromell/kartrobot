@@ -43,35 +43,43 @@ robotPosition: tuple[int, int] = (37, 37)
 interface_ready_for_data = False
 
 driverReady: bool = False
+driver_ttyUSB: serial.Serial | None = None
+sensor_ttyUSB: serial.Serial | None = None
 
-driver_ttyUSB = serial.Serial(
-    port='/dev/ttyUSB0',
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_TWO,
-    timeout=0.03,
-)
-sensor_ttyUSB = serial.Serial(
-    port='/dev/ttyUSB1',
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_TWO,
-    timeout=0.03,
-)
+try:
+    driver_ttyUSB = serial.Serial(
+        port='/dev/ttyUSB0',
+        baudrate=9600,
+        bytesize=serial.EIGHTBITS,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_TWO,
+        timeout=0.03,
+    )
+    sensor_ttyUSB = serial.Serial(
+        port='/dev/ttyUSB1',
+        baudrate=9600,
+        bytesize=serial.EIGHTBITS,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_TWO,
+        timeout=0.03,
+    )
+except serial.SerialException:
+    pass
 
 
-def uart_send(ttyUSB: serial.Serial, data: bytes):
-    try:
-        ttyUSB.write(data)
-    except serial.SerialException as e:
-        print(f"serial error: {e}")
+def uart_send(ttyUSB: serial.Serial | None, data: bytes):
+    if ttyUSB:
+        try:
+            ttyUSB.write(data)
+        except serial.SerialException as e:
+            print(f"serial error: {e}")
 
-def uart_recv(ttyUSB) -> bytes:
-   read_buf = ttyUSB.read(256)
-   print("UART RECV", read_buf)
-   return read_buf
+def uart_recv(ttyUSB: serial.Serial | None) -> bytes:
+   if ttyUSB:
+       read_buf = ttyUSB.read(256)
+       print("UART RECV", read_buf)
+       return read_buf
+   return b''
 
 # NOTE: Blocks for 0.2 second trying to read data
 def get_interface_data(conn) -> int:
@@ -285,7 +293,7 @@ def addAdjacent():
 
 
 def get_sensor_data() -> list[int] | None:
-    sensor_ttyUSB.write((253).to_bytes(1, 'big'))
+    uart_send(sensor_ttyUSB, (253).to_bytes(1, 'big'))
     read_buf = uart_recv(sensor_ttyUSB)
     if read_buf:
         print("read " + str(len(read_buf)) + " amount of bytes from SENSOR")
