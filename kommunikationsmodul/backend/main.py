@@ -292,7 +292,6 @@ def pathfind_empty():
         print(type(adjSq[0]), type(adjSq[1]))
         if adjSq not in visitedSquares and mapData[adjSq[1]][adjSq[0]] == SquareState.EMPTY:
             queue.put(adjSq)
->>>>>>> 87b46c9 (save work)
 
 
 def get_sensor_data() -> list[int] | None:
