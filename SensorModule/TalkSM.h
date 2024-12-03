@@ -44,6 +44,30 @@ ISR(USART1_RX_vect)
 		UART_Transmit_SM(leftValue >> 8);
 		UART_Transmit_SM(leftValue);
 		UART_Transmit_SM(rightValue >> 8);
-		UART_Transmit_SM(rightValue);			
+		UART_Transmit_SM(rightValue);
 	}
+	else if (inData == 'T')
+	{
+		ReflectSensor_StoreValue();
+	}
+	else if (inData == 'U')
+	{
+		uint16_t leftValue = ReflectSensor_GetValue_Left_Rel();
+		uint16_t rightValue = ReflectSensor_GetValue_Right_Rel();
+		UART_Transmit_SM(leftValue >> 8);
+		UART_Transmit_SM(leftValue);
+		UART_Transmit_SM(rightValue >> 8);
+		UART_Transmit_SM(rightValue);
+	}
+	else if (inData == 'V')
+	{
+		uint16_t leftValue = ReflectSensor_GetValue_Left_Rel();
+		uint16_t rightValue = ReflectSensor_GetValue_Right_Rel();
+		UART_Transmit_SM(leftValue >> 8);
+		UART_Transmit_SM(leftValue);
+		UART_Transmit_SM(rightValue >> 8);
+		UART_Transmit_SM(rightValue);
+		ReflectSensor_StoreValue();
+	}
+		
 }

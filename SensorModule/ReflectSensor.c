@@ -1,8 +1,12 @@
 #include "ReflectSensor.h"
+#include <limits.h>
 
 //	global variables
 uint16_t dataBuffer_left;
 uint16_t dataBuffer_right;
+uint16_t dataBuffer_leftStored;
+uint16_t dataBuffer_rightStored;
+
 uint8_t leftWasHigh;
 uint8_t rightWasHigh;
 #define HIGHVOLTAGE (1024/2)
@@ -70,4 +74,45 @@ void ReflectSensor_Update()
 		rightWasHigh = 1;		
 	}
 		
+}
+
+void ReflectSensor_StoreValue()
+{
+	dataBuffer_leftStored = dataBuffer_left;
+	dataBuffer_rightStored = dataBuffer_right;
+}
+
+// 50 240 34 50
+//	  240
+//		 12
+
+//			255 - 240 + 12
+//		Rel 12
+uint16_t ReflectSensor_GetValue_Right_Rel()
+{
+	if (dataBuffer_right >= dataBuffer_rightStored)
+	{
+		uint16_t stepsSinceStored = dataBuffer_right - dataBuffer_rightStored;
+		return stepsSinceStored;
+	}
+	else
+	{
+		uint16_t stepsSinceStored = UINT16_MAX - dataBuffer_rightStored + dataBuffer_right;
+		return stepsSinceStored;		
+	}
+}
+
+
+uint16_t ReflectSensor_GetValue_Left_Rel()
+{
+	if (dataBuffer_left >= dataBuffer_leftStored)
+	{
+		uint16_t stepsSinceStored = dataBuffer_left - dataBuffer_leftStored;
+		return stepsSinceStored;
+	}
+	else
+	{
+		uint16_t stepsSinceStored = UINT16_MAX - dataBuffer_leftStored + dataBuffer_left;
+		return stepsSinceStored;
+	}	
 }
