@@ -1,39 +1,49 @@
+#!/bin/env python3
+from copy import deepcopy
+from enum import IntEnum
+from math import floor
+from pprint import pp
+from queue import LifoQueue, Queue
+from random import random
+import datetime
+import os
+import pickle
+import select
 import serial
-driver_ttyUSB = serial.Serial(
-    port='/dev/ttyUSB0',
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_TWO,
-    timeout=0.2,
-)
-sensor_ttyUSB = serial.Serial(
-    port='/dev/ttyUSB1',
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_TWO,
-    timeout=0.2,
-)
+import socket
+import struct
+import sys
+import time
 
-def uart_send(ttyUSB: serial.Serial, data: bytes):
-    try:
-        ttyUSB.write(data)
-    except serial.SerialException as e:
-        print(f"serial error: {e}")
+from threading import Thread
 
-def uart_recv(ttyUSB) -> bytes:
-   read_buf = ttyUSB.read(256)
-   print("UART RECV", read_buf)
-   return read_buf
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-uart_send(driver_ttyUSB, (255).to_bytes(1, 'big'))
-uart_send(sensor_ttyUSB, (255).to_bytes(1, 'big'))
+try:
+    client_socket.bind(('0.0.0.0', 8027))
+except socket.error as message:
+    print(message)
+    sys.exit(8)
 
-if int.from_bytes(uart_recv(driver_ttyUSB), 'big') == 1:
-    driver_ttyUSB, sensor_ttyUSB = sensor_ttyUSB, driver_ttyUSB
-    print("DEBUG: switched UART connections")
-elif int.from_bytes(uart_recv(sensor_ttyUSB), 'big') == 1:
-    print("UART connections Should be fine?")
-else:
-    print("Neither USB port sent identifier??")
+client_socket.listen(9)
+conn, address = client_socket.accept()
+class SquareState(IntEnum):
+    UNKNOWN = 0
+    EMPTY = 1
+    WALL = 2
+    ROBOT = 3
+    START = 4
+
+sensorData = [42, 42, 42, 42]
+mapData: list[list[SquareState]] = [
+    [SquareState.UNKNOWN for _ in range(75)]
+    for _ in range(75)
+]
+pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
+
+while True:
+    print("??")
+    time.sleep(1.0)
+    length: int = len(pickled_data)
+    conn.sendall(struct.pack('>I', length) + pickled_data)
