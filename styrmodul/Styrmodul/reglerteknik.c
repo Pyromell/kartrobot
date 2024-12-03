@@ -75,7 +75,7 @@ void evaluate_walls()
 }
 
 void control_system(double angle, int wall_1, int wall_2) {
-	int output = 0;
+	volatile int output = 0;
 	//double average_side_dist = (wall_1 + wall_2)/2;
 	double error = ((wall_1 - wall_2) /15);
 	if (error < 0) {
@@ -128,6 +128,7 @@ double trig_angle(int wall_1, int wall_2)  {  // calculates the angle
 					This is done to update that data that the drive functions used.
 */					
 void control_tech() {
+	/*
 	evaluate_walls();
 	if(walls[Wall_R])
 	{
@@ -139,8 +140,9 @@ void control_tech() {
 		table_left_speed  = 2;
 		table_right_speed = 2;
 	}
-	/*
-	double angle = 0;
+	*/
+	evaluate_walls();
+	volatile double angle = 0;
 	
 	
 	if (walls[Wall_L]) // control with left sensors
@@ -150,14 +152,14 @@ void control_tech() {
 	}
 	else if (walls[Wall_R]) // control with left sensors
 	{
-		angle = trig_angle(ir_data[Sen_RB], ir_data[Sen_RF]);
-		control_system(angle, ir_data[Sen_RB], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic
+		angle = trig_angle(ir_data[Sen_RF], ir_data[Sen_RB]);
+		control_system(angle, ir_data[Sen_RF], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic
 	}
 	else
 	{
 		table_left_speed  = 0;   // this is used to see if something broke
 		table_right_speed = 0;
-	}*/
+	}
   //control_system(0, 25, 25);										// No valid data. Keep driving forward
 }
 

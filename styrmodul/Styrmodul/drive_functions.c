@@ -86,15 +86,20 @@ void drive_40_cm(const unsigned char dir)
 {
 	uint32_t exit_timer = 0; // Exit timer if something goes wrong
 	uint32_t exit_timer_2 = 0;
+	timer_10_ms = 0;
 	
 	//UART_Transmit_S(''); // Starting movement
 	while(exit_timer_2 < 2)
 	{
     if (exit_timer % 100 == 0)
-      UART_Transmit_Sen('I');
-
-		//control_tech();
-		main_flow(); // control sys 2
+	  if (timer_10_ms >= 1)
+	  {
+		  //UART_Transmit_Sen('I');
+		  timer_10_ms = 0;
+	  }
+      
+		control_tech();
+		//main_flow(); // control sys 2
 		drive(dir, controlled_left_speed, controlled_right_speed);
 		
 		exit_timer++;

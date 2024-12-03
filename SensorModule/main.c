@@ -26,7 +26,7 @@ int main(void)
 	
 	sei();
 	
-	while (!errorCode)
+	while (1)
 	{
 		Gyro_UpdateBuffer();
 		IR_UpdateBuffer();
