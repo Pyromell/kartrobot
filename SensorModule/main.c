@@ -17,7 +17,7 @@ int main(void)
 
 	if (!IR_Init())
 		errorCode = 0xFF;
-	if (!Gyro_Init())		//kolla error kod här. den fuckar lite
+	if (!Gyro_Init())
 		errorCode = 0xFF - 1;
 	if (!ReflectSensor_Init())
 		errorCode = 0xFF - 2;
@@ -26,7 +26,7 @@ int main(void)
 	
 	sei();
 	
-	while (1)
+	while (!errorCode)
 	{
 		Gyro_UpdateBuffer();
 		IR_UpdateBuffer();
