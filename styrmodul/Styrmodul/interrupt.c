@@ -2,16 +2,12 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "control_sys.c"
 #include "uart.c"
 
 // Global variables
 uint8_t byte_nr = 0; // the index of the received byte in a sequence of bytes
-                     // The first byte will be 'G' or 'I' or something similar
-
-uint8_t com_instr = 0x00; // recieved instr. from the Com. module
+uint8_t com_instr = 0x00; // received instr. from the Com. module
 volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
-
 
 int16_t sensor_gyro_temp = 0;
 int16_t sensor_gyro = 0;
