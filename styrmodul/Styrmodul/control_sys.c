@@ -37,10 +37,10 @@ enum wall_angle_values {
 	//invalid
 };
 
-volatile uint8_t ir_data_2[6] = {0,0,0,0,0,0};
+volatile uint8_t ir_data_2[6] = {60,0,0,11,0,0};
 bool walls_2[4] = {0,0,0,0}; // Do we have walls?
-uint16_t wall_relation[4] = {invalid, invalid, invalid, invalid}; // How close are we to a wall?
-uint16_t wall_angle[4] = {invalid, invalid, invalid, invalid}; // What is our angle to the wall?
+volatile uint8_t wall_relation[4] = {invalid, invalid, invalid, invalid}; // How close are we to a wall?
+volatile uint8_t wall_angle[4] = {invalid, invalid, invalid, invalid}; // What is our angle to the wall?
 
 char dir = 'X'; // N, S, W, E
 uint8_t speed_left = 0, speed_right = 0; // Speed setting: 0 off, 1 lowest, 6 highest
@@ -156,10 +156,10 @@ void angle_to_wall()
 		if ( (ir_data_2[Sen_LF] <= (ir_data_2[Sen_LB] + valid_error)) && (ir_data_2[Sen_LF] >= (ir_data_2[Sen_LB] - valid_error)) )
 			// Parallel to the wall
 			wall_angle[Wall_L] = parallel;
-		if (ir_data_2[Sen_LF] >= ir_data_2[Sen_LB])
+		else if (ir_data_2[Sen_LF] >= ir_data_2[Sen_LB])
 			// angling away from the wall.
 			wall_angle[Wall_L] = away;
-		if (ir_data_2[Sen_LF] < ir_data_2[Sen_LB])
+		else if (ir_data_2[Sen_LF] < ir_data_2[Sen_LB])
 			// angling into the wall.
 			wall_angle[Wall_L] = into;
 	}
@@ -170,10 +170,10 @@ void angle_to_wall()
 		if ( (ir_data_2[Sen_RF] <= (ir_data_2[Sen_RB] + valid_error)) && (ir_data_2[Sen_RF] >= (ir_data_2[Sen_RB] - valid_error)) )
 			// Parallel to the wall
 			wall_angle[Wall_R] = parallel;
-		if (ir_data_2[Sen_RF] >= ir_data_2[Sen_RB])
+		else if (ir_data_2[Sen_RF] >= ir_data_2[Sen_RB])
 			// angling away from the wall.
 			wall_angle[Wall_R] = away;
-		if (ir_data_2[Sen_RF] < ir_data_2[Sen_RB])
+		else if (ir_data_2[Sen_RF] < ir_data_2[Sen_RB])
 			// angling into the wall.
 			wall_angle[Wall_R] = into;
 	}
@@ -192,39 +192,30 @@ void calculate_trajectory()
 	{
 		if (wall_relation[Wall_L] == close)
 		{
-			if (wall_angle[Wall_L] == parallel) {
+			if (wall_angle[Wall_L] == parallel)
 				set_trajectory('N', 1, 0);
-			}
-			else if (wall_angle[Wall_L] == into) {
+			else if (wall_angle[Wall_L] == into)
 				set_trajectory('E', 1, 1);
-			}
-			else if (wall_angle[Wall_L] == away) {
+			else if (wall_angle[Wall_L] == away)
 				set_trajectory('N', 1, 1);
-			}
 		}
 		else if (wall_relation[Wall_L] == good)
 		{
-			if (wall_angle[Wall_L] == parallel) {
+			if (wall_angle[Wall_L] == parallel)
 				set_trajectory('N', 1, 1);
-			}
-			else if (wall_angle[Wall_L] == into) {
+			else if (wall_angle[Wall_L] == into)
 				set_trajectory('N', 1, 0);
-			}
-			else if (wall_angle[Wall_L] == away) {
+			else if (wall_angle[Wall_L] == away)
 				set_trajectory('N', 0, 1);
-			}
 		}
 		else if (wall_relation[Wall_L] == far)
 		{
-			if (wall_angle[Wall_L] == parallel) {
+			if (wall_angle[Wall_L] == parallel)
 				set_trajectory('N', 0, 1);
-			}
-			else if (wall_angle[Wall_L] == into) {
+			else if (wall_angle[Wall_L] == into)
 				set_trajectory('N', 1, 1);
-			}
-			else if (wall_angle[Wall_L] == away) {
+			else if (wall_angle[Wall_L] == away)
 				set_trajectory('W', 1, 1);
-			}
 		}
 	}
 	
@@ -232,39 +223,30 @@ void calculate_trajectory()
 	{
 		if (wall_relation[Wall_R] == close)
 		{
-			if (wall_angle[Wall_R] == parallel) {
+			if (wall_angle[Wall_R] == parallel)
 				set_trajectory('N', 0, 1);
-			}
-			else if (wall_angle[Wall_R] == into) {
+			else if (wall_angle[Wall_R] == into)
 				set_trajectory('W', 1, 1);
-			}
-			else if (wall_angle[Wall_R] == away) {
+			else if (wall_angle[Wall_R] == away)
 				set_trajectory('N', 1, 1);
-			}
 		}
 		else if (wall_relation[Wall_R] == good)
 		{
-			if (wall_angle[Wall_R] == parallel) {
+			if (wall_angle[Wall_R] == parallel)
 				set_trajectory('N', 1, 1);
-			}
-			else if (wall_angle[Wall_R] == into) {
+			else if (wall_angle[Wall_R] == into)
 				set_trajectory('N', 0, 1);
-			}
-			else if (wall_angle[Wall_R] == away) {
+			else if (wall_angle[Wall_R] == away) 
 				set_trajectory('N', 1, 0);
-			}
 		}
-		else if (wall_relation[Wall_L] == far)
+		else if (wall_relation[Wall_R] == far)
 		{
-			if (wall_angle[Wall_L] == parallel) {
+			if (wall_angle[Wall_R] == parallel)
 				set_trajectory('N', 1, 0);
-			}
-			else if (wall_angle[Wall_L] == into) {
+			else if (wall_angle[Wall_R] == into)
 				set_trajectory('N', 1, 1);
-			}
-			else if (wall_angle[Wall_L] == away) {
+			else if (wall_angle[Wall_R] == away)
 				set_trajectory('E', 1, 1);
-			}
 		}
 	}
 }
