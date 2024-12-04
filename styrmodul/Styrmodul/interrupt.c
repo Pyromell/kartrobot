@@ -7,11 +7,15 @@
 // Global variables
 uint8_t byte_nr = 0; // the index of the received byte in a sequence of bytes
 uint8_t com_instr = 0x00; // received instr. from the Com. module
-volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
+unsigned char sensor = 0;
+
 
 int16_t sensor_gyro_temp = 0;
 int16_t sensor_gyro = 0;
-unsigned char sensor = 0;
+volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
+uint16_t reflex_l = 0;
+uint16_t reflex_r = 0;
+
 
 /***********************************
 File Description:
@@ -42,11 +46,35 @@ void fetch_gyro(const uint8_t index) {
 	}
 }
 
-void fetch_IR_data(const uint8_t index) {
+void fetch_IR(const uint8_t index) {
 	ir_data[index -1] = UDR1;
-	if (index >= 6) {
+
+	if (index >= 6)
 		sensor = 'x';
-	}
+}
+
+void fetch_reflex(const uint8_t index) {
+  switch (index)
+  {
+    case 1:
+      reflex_l = UDR1;
+      break;
+    case 2:
+      reflex_l = (reflex_l << 8);
+      reflex_l |= UDR1;
+      break;
+    case 3:
+      reflex_r = UDR1;
+      break;
+    case 4:
+      reflex_r = (reflex_r << 8);
+      reflex_r |= UDR1;
+      sensor = 'x';
+      break;
+    default:
+      sensor = 'x';
+      break;
+  }
 }
 
 ISR(USART1_RX_vect) {
@@ -56,7 +84,11 @@ ISR(USART1_RX_vect) {
 		byte_nr++;
 		break;
 	case 'I' :
-		fetch_IR_data(byte_nr);
+		fetch_IR(byte_nr);
+		byte_nr++;
+		break;
+  case 'R' :
+		fetch_reflex(byte_nr);
 		byte_nr++;
 		break;
   default:

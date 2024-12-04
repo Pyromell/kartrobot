@@ -23,43 +23,43 @@ enum wall_index {
 	Wall_R
 };
 
-#define	Kp 15					// higher Kp gives a faster response but can be inaccurate if to high
+#define	Kp 16					// higher Kp gives a faster response but can be inaccurate if to high
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define angle_scale_factor 10  // simply used to scale the output for the switch range case
-#define dist_scale_factor 11
-#define dist_reference 18		// how far from the wall we will align
+#define dist_scale_factor 1
+#define dist_reference 17		// how far from the wall we will align
 
 // Global variables
 bool walls[4] = {0,0,0,0};
 	
 void lookup_table(const int input) {
 	if (input < 10 && input > -10) { // lookup table for input that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
-		table_left_speed  = 2;
-		table_right_speed = 2;
+		table_left_speed  = 1;
+		table_right_speed = 1;
 	}
-	else if (input < 40 && input >= 10) {
+	else if (input < 60 && input >= 10) {
+		table_left_speed  = 2;
+		table_right_speed = 1;
+	}
+	else if (input < 110 && input >= 60) {
 		table_left_speed  = 3;
+		table_right_speed = 1;
+	}
+	else if (input < 800 && input >= 110) {
+		table_left_speed  = 3;
+		table_right_speed = 1;
+	}
+	else if (input <= -10 && input > -60) {
+		table_left_speed  = 1;
 		table_right_speed = 2;
 	}
-	else if (input < 80 && input >= 40) {
-		table_left_speed  = 4;
-		table_right_speed = 2;
-	}
-	else if (input < 400 && input >= 80) {
-		table_left_speed  = 5;
-		table_right_speed = 2;
-	}
-	else if (input <= -10 && input > -40) {
-		table_left_speed  = 2;
+	else if (input <= -60 && input > -110) {
+		table_left_speed  = 1;
 		table_right_speed = 3;
 	}
-	else if (input <= -40 && input > -80) {
-		table_left_speed  = 2;
-		table_right_speed = 4;
-	}
-	else if (input <= -80 && input > -400) {
-		table_left_speed  = 2;
-		table_right_speed = 5;
+	else if (input <= -110 && input > -800) {
+		table_left_speed  = 1;
+		table_right_speed = 3;
 	}
 	else {
 		table_left_speed  = 0;   // this is used to see if something broke
@@ -86,6 +86,14 @@ void evaluate_walls()
   // Right wall
   walls[Wall_R] = ((min_val <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val) &&
   (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
+  
+  if(walls[Wall_R] && walls[Wall_L])
+  {
+	  if (ir_data[Sen_RF] + ir_data[Sen_RB] < ir_data[Sen_LF] + ir_data[Sen_LB])
+		walls[Wall_L] = 0;
+	  else
+		walls[Wall_R] = 0;
+  }
 }
 
 void control_system(double angle, uint8_t wall_1, uint8_t wall_2) {
@@ -96,10 +104,11 @@ void control_system(double angle, uint8_t wall_1, uint8_t wall_2) {
 		error = error * -1;
 	}
 	volatile int16_t alignment = (dist_reference - average_dist) * dist_scale_factor;
-	if (!walls[Wall_L] && walls[Wall_R]) {
+	if (walls[Wall_L] && !walls[Wall_R]) {
 		alignment = alignment * -1;
 	}
 	output = angle_scale_factor * angle*( Kp + Kd *error) + alignment;
+	//output = angle_scale_factor * angle * ( Kp + (Kd * error) );
 	lookup_table(output);
 }
 
@@ -133,29 +142,28 @@ This is done to update that data that the drive functions used.
 */					
 void control_tech() {
 	evaluate_walls();
-	if(walls[Wall_F])
-	{
-		// if the wheel is kissing the wall then its a problem
-		if(ir_data[Sen_F] <= 14)
-		{
-			table_left_speed  = 0;
-		    table_right_speed = 0;
-		}
-	}
-	else if (walls[Wall_L]) // control with left sensors
-	{
-		double angle = trig_angle(ir_data[Sen_LB], ir_data[Sen_LF]);			// calculate angle, negative angle means turn right, positive angle means turn left
-		control_system(angle, ir_data[Sen_LB], ir_data[Sen_LF]);
-	}
-	else if (walls[Wall_R]) // control with left sensors
-	{
-		double angle = trig_angle(ir_data[Sen_RF], ir_data[Sen_RB]);
-		control_system(angle, ir_data[Sen_RF], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic
-	}
-	else // IF WE ARE HERE => NO WALL veri bad
+	
+
+	// if the wheel is kissing the wall then its a problem
+	if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16)
 	{
 		table_left_speed  = 0;
 		table_right_speed = 0;
+	}
+	else if (walls[Wall_L]) // control with left sensors
+	{
+		double angle = trig_angle(ir_data[Sen_LF], ir_data[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
+		control_system(angle, ir_data[Sen_LF], ir_data[Sen_LB]);
+	}
+	else if (walls[Wall_R]) // control with left sensors
+	{
+		double angle = trig_angle(ir_data[Sen_RB], ir_data[Sen_RF]);
+		control_system(angle, ir_data[Sen_RB], ir_data[Sen_RF]);		// Inverted order of arguments since each side is inverted logic
+	}
+	else // IF WE ARE HERE => NO WALL veri bad
+	{
+		table_left_speed  = 1;
+		table_right_speed = 1;
 	}
 }
 
