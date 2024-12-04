@@ -68,8 +68,7 @@ int main(void)
  
   while(1)
   {
-	  drive_40_cm('N');
-	  //drive_test();
+	  drive_test();
   }
 
 uint8_t current_speed_l = 1, current_speed_r = 1;
@@ -78,44 +77,66 @@ uint8_t current_speed_l = 1, current_speed_r = 1;
   {
 	  switch(com_instr) {
 		  case 0:
+			  UART_Transmit_Com(0x01);	// confirm instruction
 			  stop();
+			  UART_Transmit_Com(0x02);	// gimme next instruction
 			  break;
+
 		  case 0x01:
+			  UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_40_cm('N');
 			  com_instr = 'X';
+        UART_Transmit_Com(0x02);	// gimme next instruction
 			  break;
+
 		  case 0x02:
+        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_40_cm('S');
 			  com_instr = 'X';
+        UART_Transmit_Com(0x02);	// gimme next instruction
 			  break;
+
 		  case 0x03:
+        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_turn('E');
 			  com_instr = 'X';
+        UART_Transmit_Com(0x02);	// gimme next instruction
 			  break;
+
 		  case 0x04:
+        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_turn('W');
 			  com_instr = 'X';
+        UART_Transmit_Com(0x02);	// gimme next instruction
 			  break;
+
 		  case 0x05:
 			  drive('N',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
+
 		  case 0x06:
 			  drive('S',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
+
 		  case 0x07:
 			  drive('E',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
+
 		  case 0x08:
 			  drive('W',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
+
 		  case 0x09:
+        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_turn('S');
 			  com_instr = 'X';
+        UART_Transmit_Com(0x02);	// gimme next instruction
 			  break;
+
 		  default:
 			  stop();
 			  break;
