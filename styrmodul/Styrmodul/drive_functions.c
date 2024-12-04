@@ -85,26 +85,26 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
 void drive_40_cm(const unsigned char dir)
 {
 	timer_10_ms = 0;
-  
 	UART_Transmit_Sen('R');
 	uint16_t reflex_l_start = reflex_l;
 	uint16_t reflex_r_start = reflex_r;
 
-	while((((reflex_l_start + 40) > reflex_l) || ((reflex_r_start + 40) > reflex_r)) && timer_10_ms <= 200)
+	while( (((reflex_l_start + 29) > reflex_l) && ((reflex_r_start + 29) > reflex_r)) || encountered_wall == 0)
 	{
-		if (timer_10_ms % 2 == 0)
-		{
-			UART_Transmit_Sen('I');
-		}
-
-    if (timer_10_ms % 10 == 0)
+    drive(dir, controlled_left_speed, controlled_right_speed);
+    if (timer_10_ms == 1)
     {
       UART_Transmit_Sen('R');
     }
-
+		if (timer_10_ms > 4)
+		{
+			UART_Transmit_Sen('I');
+      timer_10_ms = 0;
+		}
 		control_tech();
 		drive(dir, controlled_left_speed, controlled_right_speed);
 	}
+  encountered_wall = 0;
 }
 
 // Perform a 90 degrees turn in the specified direction
@@ -192,12 +192,12 @@ void drive_test()
 {
 	drive_40_cm('N');
 	for (volatile int j = 0; j < 30; ++j)
-		for (volatile int i = 0; i < 9999; ++i)
-			stop();
-  for (volatile int j = 0; j < 30; ++j)
-		for (volatile int i = 0; i < 9999; ++i)
-			stop();
-  for (volatile int j = 0; j < 30; ++j)
-		for (volatile int i = 0; i < 9999; ++i)
-			stop();
+	for (volatile int i = 0; i < 9999; ++i)
+	stop();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	stop();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	stop();
 }

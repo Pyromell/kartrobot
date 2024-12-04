@@ -14,6 +14,10 @@ TEMP ports:
   
 ***********************************/
 
+//Global var.
+uint8_t encountered_wall = 0;
+
+
 void PORT_Init(void) {
 	DDRD = 0xFA; // low for UART, high for PWM
 	DDRB = 0xFF; // Only used for error checking

@@ -147,8 +147,9 @@ void control_tech() {
 	// if the wheel is kissing the wall then its a problem
 	if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16)
 	{
-		table_left_speed  = 0;
-		table_right_speed = 0;
+  	table_left_speed  = 0;
+  	table_right_speed = 0;
+    encountered_wall = 1;
 	}
 	else if (walls[Wall_L]) // control with left sensors
 	{
