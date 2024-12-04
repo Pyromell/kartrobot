@@ -39,7 +39,6 @@ void UART_Transmit_Com(const unsigned char data) {
 	while(TXC0 == 1) ; // wait for the hardware to set its done flag
 }
 
-
 // Sensor module
 void UART_Transmit_Sen(const unsigned char data) {
 	while ( !(UCSR1A & (1 << UDRE1)) ) ; // wait for empty transmit buffer
@@ -47,37 +46,21 @@ void UART_Transmit_Sen(const unsigned char data) {
 	while(TXC1 == 1) ; // wait for the hardware to set its done flag
 }
 
-// This function sends a 'R' for RECEIVED over UART0
+// This function sends a '0x01' for RECEIVED over UART0
 // This should be called each time we receive a drive instr. to indicate to
 // the communication module that the drive module is currently doing a drive
 // function.
 void UART_Transmit_Instr_Received()
 {
-	UART_Transmit_Com('R');
+	while ( !(UCSR1A & (1 << UDRE1)) ) ; // wait for empty transmit buffer
+	UDR0 = 0x01; // put data into buffer
 }
 
-// This function sends a 'D' for DONE over UART0
+// This function sends a '0x02' for DONE over UART0
 // This should be called each time a move instr id completed to indicate to the
 // communication module that the drive module is ready for a new drive instr
 void UART_Transmit_Instr_Done()
 {
-	UART_Transmit_Com('D');
+	while ( !(UCSR1A & (1 << UDRE1)) ) ; // wait for empty transmit buffer
+	UDR0 = 0x02; // put data into buffer
 }
-
-// Communications module sync. receive (OLD, async is used on ISR)
-/*
-unsigned char UART_Receive_Com(void) {
-	while ( !(UCSR0A & (1 << RXC0)) )
-	;
-	return UDR0;
-}
-*/
-
-// Sensor module sync. receive (OLD, async is used on ISR)
-/*
-unsigned char UART_Receive_Sen(void) {
-	while ( !(UCSR1A & (1 << RXC1)) )
-	;
-	return UDR1;
-}
-*/

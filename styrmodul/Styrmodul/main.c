@@ -77,37 +77,32 @@ uint8_t current_speed_l = 1, current_speed_r = 1;
   {
 	  switch(com_instr) {
 		  case 0:
-			  UART_Transmit_Com(0x01);	// confirm instruction
 			  stop();
-			  UART_Transmit_Com(0x02);	// gimme next instruction
+			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x01:
-			  UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_40_cm('N');
 			  com_instr = 'X';
-        UART_Transmit_Com(0x02);	// gimme next instruction
+        UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x02:
-        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_40_cm('S');
 			  com_instr = 'X';
-        UART_Transmit_Com(0x02);	// gimme next instruction
+        UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x03:
-        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_turn('E');
 			  com_instr = 'X';
-        UART_Transmit_Com(0x02);	// gimme next instruction
+        UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
-        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_turn('W');
 			  com_instr = 'X';
-        UART_Transmit_Com(0x02);	// gimme next instruction
+        UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x05:
@@ -131,10 +126,9 @@ uint8_t current_speed_l = 1, current_speed_r = 1;
 			  break;
 
 		  case 0x09:
-        UART_Transmit_Com(0x01);	// confirm instruction
 			  drive_turn('S');
 			  com_instr = 'X';
-        UART_Transmit_Com(0x02);	// gimme next instruction
+        UART_Transmit_Instr_Done();
 			  break;
 
 		  default:
