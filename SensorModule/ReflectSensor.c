@@ -61,18 +61,27 @@ void ReflectSensor_Update()
 	//	double check these pin values
 	uint16_t left = ReflectSensor_ReadADC(6);
 	uint16_t right = ReflectSensor_ReadADC(7);
-	if (left > HIGHVOLTAGE)
+	if (left < HIGHVOLTAGE)
 	{
 		if (leftWasHigh == 0)
+		{
 			dataBuffer_left++;
-		leftWasHigh = 1;
+			leftWasHigh = 1;		
+		}
 	}
-	if (right > HIGHVOLTAGE)
+	else
+		leftWasHigh = 0;
+		
+	if (right < HIGHVOLTAGE)	//if white passes sensor it counts up (white = low ADC value)
 	{
 		if (rightWasHigh == 0)
-			dataBuffer_left++;
-		rightWasHigh = 1;		
+		{	
+			dataBuffer_right++;
+			rightWasHigh = 1;		
+		}
 	}
+	else		// has to be high (not on white) before adding another step
+		rightWasHigh = 0;
 		
 }
 
