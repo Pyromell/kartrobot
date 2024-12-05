@@ -17,7 +17,7 @@ import time
 
 from threading import Thread
 
-DEBUG_STANDALONE_MODE: bool = True
+DEBUG_STANDALONE_MODE: bool = False
 
 NETWORK_PACKET_LEN: int = 11716
 
@@ -49,7 +49,7 @@ mapData[38][37] = SquareState.START
 lastPosition: tuple[int, int] = (37, 38)
 robotPosition: tuple[int, int] = (37, 38)
 
-driverReady: bool = False
+driverReady: bool = True
 driver_ttyUSB: serial.Serial | None = None
 sensor_ttyUSB: serial.Serial | None = None
 
@@ -60,7 +60,7 @@ try:
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_TWO,
-        timeout=0.03,
+        timeout=0.1,
     )
     sensor_ttyUSB = serial.Serial(
         port='/dev/ttyUSB1',
@@ -68,7 +68,7 @@ try:
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_TWO,
-        timeout=0.03,
+        timeout=0.1,
     )
 except serial.SerialException:
     print("DEBUG: UART serial objects not created")
@@ -101,32 +101,18 @@ def get_interface_data(conn) -> int:
         return -2
     except select.error:
         print("DISCONNECTED")
-        sys.exit(1)
-
-class TimedVar:
-    def __init__(self):
-        self._started_at = datetime.datetime.utcnow()
-
-    def __call__(self):
-        time_called = datetime.datetime.utcnow()
-        time_passed = time_called - self._started_at
-        if time_passed.total_seconds() >= 0.03:
-            self._started_at = time_called
-            return True
-        return False
-
-DEBUG_DRIVER_SHOULD_BE_READY = TimedVar()
 
 # 1 = börjat köra, 2 = klar
 def getDriverData() -> bool:
     if DEBUG_STANDALONE_MODE:
-        ret = DEBUG_DRIVER_SHOULD_BE_READY()
-        return ret
+        return True
     readBuf: bytes = uart_recv(driver_ttyUSB)
+    print(readBuf)
     print("get driver data")
     if readBuf:
         print("read " + str(len(readBuf)) + " amount of bytes from DRIVER")
-    if int.from_bytes(readBuf, 'big') == 2:
+    if int.from_bytes(readBuf, 'big') == 0x0B:
+        print("DRIVER IS READY")
         return True
     else:
         return False
@@ -371,17 +357,12 @@ def updateMap(sensorData: list[int]) -> None:
 def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
+    length: int = len(pickled_data)
     print("sending")
     try:
-        ready = select.select([], [conn], [], 0)
-        if ready[1]:
-            length: int = len(pickled_data)
-            conn.sendall(struct.pack('>I', length) + pickled_data)
-            if len(pickled_data) != NETWORK_PACKET_LEN:
-                print("DIFFERENT SENSOR DATA", ret)
+        conn.sendall(struct.pack("<I", length) + pickled_data)
     except ConnectionResetError:
         print("WARN: Connection reset")
-        print("sending donne")
         return False
     print("sending donne")
     return True
@@ -393,18 +374,22 @@ def sendCommandWithRetry(data: bytes) -> None:
         return
     uart_send(driver_ttyUSB, data)
     if not DEBUG_STANDALONE_MODE:
-        while int.from_bytes(uart_recv(ttyUSB), 'big') != 1:
+        while int.from_bytes(uart_recv(driver_ttyUSB), 'big') != 0x0A:
             uart_send(driver_ttyUSB, data)
     driverReady = False
 
+def send_stop() -> None:
+    global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
+    print('sending stop')
+    uart_send(driver_ttyUSB, (0).to_bytes(1, 'big'))
 
 def send_forward(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending fram', short)
     if short:
-        sendCommandWithRetry((1).to_bytes(1, 'big'))
-    else:
         sendCommandWithRetry((5).to_bytes(1, 'big'))
+    else:
+        sendCommandWithRetry((1).to_bytes(1, 'big'))
         lastPosition = robotPosition
         match currentDirection:
            case Direction.NORTH:
@@ -420,9 +405,9 @@ def send_backward(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending back', short)
     if short:
-        sendCommandWithRetry((2).to_bytes(1, 'big'))
-    else:
         sendCommandWithRetry((6).to_bytes(1, 'big'))
+    else:
+        sendCommandWithRetry((2).to_bytes(1, 'big'))
         lastPosition = robotPosition
         match currentDirection:
            case Direction.NORTH:
@@ -438,18 +423,18 @@ def turn_right(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang höger')
     if short:
-        sendCommandWithRetry((3).to_bytes(1, 'big'))
-    else:
         sendCommandWithRetry((7).to_bytes(1, 'big'))
+    else:
+        sendCommandWithRetry((3).to_bytes(1, 'big'))
         currentDirection = Direction((int(currentDirection) + 1) % 4)
 
 def turn_left(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang vänster')
     if short:
-        sendCommandWithRetry((4).to_bytes(1, 'big'))
-    else:
         sendCommandWithRetry((8).to_bytes(1, 'big'))
+    else:
+        sendCommandWithRetry((4).to_bytes(1, 'big'))
         currentDirection = Direction((int(currentDirection) + 3) % 4)
 
 
@@ -484,54 +469,42 @@ def main() -> int:
             conn, address = client_socket.accept()
             print('Got new connection')
             while True:
+                print("LOOP")
                 interfaceCommand = get_interface_data(conn)
                 match interfaceCommand:
                     case 0:
-                        interfaceReadyForData = True
-                        # TODO: Implement
-                        # if not autoMode:
-                        #     uart_send(driver_ttyUSB, (1).to_bytes(1, 'big'))
+                        if not autoMode:
+                            send_stop()
                         pass
                     case 1:
-                        interfaceReadyForData = True
                         if not autoMode:
                             send_forward(False)
                     case 2:
-                        interfaceReadyForData = True
                         if not autoMode:
                             send_backward(False)
                     case 3:
-                        interfaceReadyForData = True
                         if not autoMode:
                             turn_right(False)
                     case 4:
-                        interfaceReadyForData = True
                         if not autoMode:
                             turn_left(False)
                     case 6:
-                        interfaceReadyForData = True
                         if not autoMode:
                             send_forward(True)
                     case 6:
-                        interfaceReadyForData = True
                         if not autoMode:
                             send_backward(True)
                     case 7:
-                        interfaceReadyForData = True
                         if not autoMode:
                             turn_right(True)
                     case 8:
-                        interfaceReadyForData = True
                         if not autoMode:
                             turn_left(True)
                     case 9:
-                        interfaceReadyForData = True
                         autoMode = not autoMode
                         continue
                     case 10:
                         return 0
-                    case 255:
-                        interfaceReadyForData = True
                     case -1:
                         print("Broken network connection")
                         break
@@ -550,8 +523,6 @@ def main() -> int:
                     if autoMode and sensorData:
                         addAdjacent();
                         pathfindEmpty()
-                print("??")
-                time.sleep(1.0)
                 sendSensorDataToInterface(conn, sensorData)
 
     except KeyboardInterrupt:

@@ -44,6 +44,6 @@ pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
 
 while True:
     print("??")
-    time.sleep(1.0)
+    time.sleep(1)
     length: int = len(pickled_data)
     conn.sendall(struct.pack('>I', length) + pickled_data)
