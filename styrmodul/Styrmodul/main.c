@@ -65,38 +65,47 @@ int main(void)
   UART_Init();
   PWM_Init();
   Interrupt_Init();
- 
-  while(1)
-  {
-	  drive_test();
-  }
 
 uint8_t current_speed_l = 1, current_speed_r = 1;
 
+while (1)
+{
+	drive_turn('W');
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	stop();
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	drive_turn('E');
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	stop();
+}
   while(1)
   {
 	  switch(com_instr) {
 		  case 0:
 			  stop();
+			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x01:
 			  drive_40_cm('N');
 			  com_instr = 'X';
-        UART_Transmit_Instr_Done();
+				UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x02:
 			  drive_40_cm('S');
 			  com_instr = 'X';
-        UART_Transmit_Instr_Done();
+			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x03:
 			  drive_turn('E');
 			  com_instr = 'X';
-        UART_Transmit_Instr_Done();
+              UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
@@ -106,29 +115,33 @@ uint8_t current_speed_l = 1, current_speed_r = 1;
 			  break;
 
 		  case 0x05:
-			  drive('N',current_speed_l,current_speed_r);
+			  for (int i = 0; i < 1000; ++i)
+				  drive('N',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
 
 		  case 0x06:
-			  drive('S',current_speed_l,current_speed_r);
+			  for (int i = 0; i < 1000; ++i)
+				drive('S',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
 
 		  case 0x07:
-			  drive('E',current_speed_l,current_speed_r);
+			  for (int i = 0; i < 1000; ++i)
+				drive('E',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
 
 		  case 0x08:
-			  drive('W',current_speed_l,current_speed_r);
+			  for (int i = 0; i < 100; ++i)
+				drive('W',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
 
 		  case 0x09:
 			  drive_turn('S');
 			  com_instr = 'X';
-        UART_Transmit_Instr_Done();
+			  UART_Transmit_Instr_Done();
 			  break;
 
 		  default:

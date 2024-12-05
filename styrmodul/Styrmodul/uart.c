@@ -53,7 +53,8 @@ void UART_Transmit_Sen(const unsigned char data) {
 void UART_Transmit_Instr_Received()
 {
 	while ( !(UCSR1A & (1 << UDRE1)) ) ; // wait for empty transmit buffer
-	UDR0 = 0x01; // put data into buffer
+	UDR0 = 0x0A; // put data into buffer
+	while(TXC0 == 1) ;
 }
 
 // This function sends a '0x02' for DONE over UART0
@@ -62,5 +63,6 @@ void UART_Transmit_Instr_Received()
 void UART_Transmit_Instr_Done()
 {
 	while ( !(UCSR1A & (1 << UDRE1)) ) ; // wait for empty transmit buffer
-	UDR0 = 0x02; // put data into buffer
+	UDR0 = 0x0B; // put data into buffer
+	while(TXC0 == 1) ;
 }

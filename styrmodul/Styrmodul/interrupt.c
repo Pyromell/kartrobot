@@ -30,7 +30,7 @@ Pin Description:
 
 ISR(USART0_RX_vect) {
 	com_instr = UDR0;
-	UDR0 = 0x01;
+	UART_Transmit_Instr_Received();
 }
 
 void fetch_gyro(const uint8_t index) {

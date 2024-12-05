@@ -71,7 +71,7 @@ void lookup_table(const int input) {
 void evaluate_walls()
 {
   const uint8_t min_val = 11;
-  const uint8_t max_val = 60;
+  const uint8_t max_val = 40;
 
   // Front wall
   walls[Wall_F] = (min_val <= ir_data[Sen_F] && ir_data[Sen_F] <= max_val);
@@ -141,6 +141,7 @@ and the interrupt that occurs every 10ms sets the drive controlled_left/right_sp
 This is done to update that data that the drive functions used.
 */					
 void control_tech() {
+	encountered_wall = 0;
 	evaluate_walls();
 	
 
