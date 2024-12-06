@@ -10,8 +10,8 @@ uint8_t com_instr = 0x00; // received instr. from the Com. module
 unsigned char sensor = 0;
 
 
-int16_t sensor_gyro_temp = 0;
-int16_t sensor_gyro = 0;
+volatile int16_t sensor_gyro_temp = 0;
+volatile int16_t sensor_gyro = 0;
 volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
 uint16_t reflex_l = 0;
 uint16_t reflex_r = 0;
@@ -41,6 +41,9 @@ void fetch_gyro(const uint8_t index) {
 		sensor_gyro_temp = (sensor_gyro_temp << 8);
 		sensor_gyro_temp |= UDR1;
 		sensor_gyro = sensor_gyro_temp;
+		if (sensor_gyro == 0) {
+		sensor_gyro = 1;
+		} 
 		sensor = 'x';       // sensor is 'G' or 'I'
 	}
 }
@@ -48,8 +51,10 @@ void fetch_gyro(const uint8_t index) {
 void fetch_IR(const uint8_t index) {
 	ir_data[index -1] = UDR1;
 
-	if (index >= 6)
+	if (index > 5) {
 		sensor = 'x';
+		UART_Transmit_Sen('R');
+	}
 }
 
 void fetch_reflex(const uint8_t index) {

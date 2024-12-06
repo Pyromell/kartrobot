@@ -47,7 +47,7 @@ void west(const uint8_t speed_left, const uint8_t speed_right)
 
 void east(const uint8_t speed_left, const uint8_t speed_right)
 {
-	PORTD = ( (speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x10;
+	PORTD = ( (speed_select(speed_left) & 0x80) | (( speed_select(speed_right) >> 1) & 0x40) ) | 0x10;
 }
 
 void stop()
@@ -83,25 +83,19 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
 
 // Drive 40 cm forward
 void drive_40_cm(const unsigned char dir)
-{	uint16_t exit_timer = 0;
+{	
+	uint16_t exit_timer = 0;
 	timer_10_ms = 0;
-	UART_Transmit_Sen('R');
 	uint16_t reflex_l_start = reflex_l;
 	uint16_t reflex_r_start = reflex_r;
-
-	while( (( ( (reflex_l_start + 29) > reflex_l) || ((reflex_r_start + 29) > reflex_r)) ) && exit_timer < 100 )
+	
+	while( (((reflex_l_start + 29) > reflex_l) || ((reflex_r_start + 29) > reflex_r)) )
 	{
-		if (timer_10_ms == 1)
-		{
-			UART_Transmit_Sen('R');
-			
-		}
-		if (timer_10_ms > 4)
-		{
-			UART_Transmit_Sen('I');
-			timer_10_ms = 0;
-			exit_timer++;
-		}
+	if (timer_10_ms > 3)
+	{
+		UART_Transmit_Sen('I');
+		timer_10_ms = 0;
+	}
 		control_tech();
 		drive(dir, controlled_left_speed, controlled_right_speed);
 	}
@@ -110,18 +104,21 @@ void drive_40_cm(const unsigned char dir)
 // Perform a 90 degrees turn in the specified direction
 void drive_turn(const char dir)
 {
-	int32_t total_angle = 0;
-	uint16_t exit_timer = 0;
+	int16_t old_gyro = 0;
+	int32_t total_angle = 0; 
 	timer_10_ms = 0;
 	sensor_gyro = 0;
-	
+	UART_Transmit_Sen('G');
+	while (sensor_gyro == 0) {}	 // we wait for the first gyro data
+	old_gyro = sensor_gyro;			 // the first data will be the error of the gyro
+
 	if (dir == 'W')
 	{	
-		while(total_angle < 7250 && exit_timer < 40)
+		while(total_angle < 7250)
 		{
 			if (timer_10_ms > 0)
 			{
-				total_angle += sensor_gyro * timer_10_ms;
+				total_angle += (sensor_gyro - old_gyro) * timer_10_ms;
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
 			}
@@ -130,11 +127,11 @@ void drive_turn(const char dir)
 	}
 	else if(dir == 'E')
 	{
-		while(total_angle < 7250 && exit_timer < 40)
+		while(total_angle < 7250)
 		{
 			if (timer_10_ms > 0)
 			{
-				total_angle += sensor_gyro * timer_10_ms;
+				total_angle -= (sensor_gyro - old_gyro) * timer_10_ms;
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
 			}
@@ -143,7 +140,7 @@ void drive_turn(const char dir)
 	}
 	else if(dir == 'S')
 		{
-			while(total_angle < 14500 && exit_timer < 40)
+			while(total_angle < 14500)
 			{
 				if (timer_10_ms > 0)
 				{
@@ -195,9 +192,11 @@ void drive_test()
 	for (volatile int j = 0; j < 30; ++j)
 	for (volatile int i = 0; i < 9999; ++i)
 	stop();
+	drive_turn('W');
 	for (volatile int j = 0; j < 30; ++j)
 	for (volatile int i = 0; i < 9999; ++i)
 	stop();
+	drive_turn('E');
 	for (volatile int j = 0; j < 30; ++j)
 	for (volatile int i = 0; i < 9999; ++i)
 	stop();
