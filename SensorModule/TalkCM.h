@@ -17,6 +17,8 @@ Pin Description:
 #define COMMAND_VALUE_REQUEST_Gyro 254
 #define COMMAND_VALUE_REQUEST_IR 253
 #define COMMAND_VALUE_REQUEST_Reflect 252
+#define COMMAND_VALUE_REQUEST_Gyro_Calibrate 251
+#define COMMAND_VALUE_REQUEST_Gyro_Calibrate_Status 250
 
 ISR(USART0_RX_vect) 
 {
@@ -51,5 +53,14 @@ ISR(USART0_RX_vect)
 		UART_Transmit_CM(rightValue >> 8);
 		UART_Transmit_CM(rightValue);		
 		
+	}
+	else if (commandData == COMMAND_VALUE_REQUEST_Gyro_Calibrate)
+	{
+		UART_Transmit_CM(shouldCalibrate);
+		shouldCalibrate = 1;
+	}
+	else if (commandData == COMMAND_VALUE_REQUEST_Gyro_Calibrate_Status)
+	{
+		UART_Transmit_CM(shouldCalibrate);
 	}
 }
