@@ -108,6 +108,12 @@ float Gyro_ADCToFloat(uint16_t adcValue)
 //	returns true if successful
 uint8_t Gyro_UpdateBuffer()
 {
+
+	if (shouldCalibrate)
+	{
+		Gyro_Calibrate();
+		shouldCalibrate = 0;
+	}
 	
 	uint8_t success = 0;
 	
