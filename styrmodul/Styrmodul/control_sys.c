@@ -27,7 +27,7 @@ enum wall_index {
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define angle_scale_factor 10  // simply used to scale the output for the switch range case
 #define dist_scale_factor 1
-#define dist_reference 17		// how far from the wall we will align
+#define dist_reference 20		// how far from the wall we will align
 
 // Global variables
 bool walls[4] = {0,0,0,0};
@@ -71,7 +71,7 @@ void lookup_table(const int input) {
 void evaluate_walls()
 {
   const uint8_t min_val = 11;
-  const uint8_t max_val = 60;
+  const uint8_t max_val = 35;
 
   // Front wall
   walls[Wall_F] = (min_val <= ir_data[Sen_F] && ir_data[Sen_F] <= max_val);

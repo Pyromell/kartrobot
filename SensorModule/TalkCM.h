@@ -51,8 +51,6 @@ ISR(USART0_RX_vect)
 		UART_Transmit_CM(leftValue >> 8);
 		UART_Transmit_CM(leftValue);
 		UART_Transmit_CM(rightValue >> 8);
-		UART_Transmit_CM(rightValue);		
-		
+		UART_Transmit_CM(rightValue);			
 	}
-	
 }
