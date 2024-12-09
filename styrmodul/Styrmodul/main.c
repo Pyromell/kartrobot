@@ -6,6 +6,7 @@ volatile uint8_t table_left_speed = 0;
 volatile uint8_t table_right_speed = 0;
 volatile uint8_t controlled_left_speed = 0;
 volatile uint8_t controlled_right_speed = 0;
+volatile uint8_t exit_forward = 0;
 
 #include "init.c"
 #include "interrupt.c"
@@ -68,19 +69,6 @@ int main(void)
 
 uint8_t current_speed_l = 1, current_speed_r = 1;
 
-while (1)
-{
-	drive_turn('W');
-	for (volatile int j = 0; j < 30; ++j)
-	for (volatile int i = 0; i < 9999; ++i)
-	stop();
-	for (volatile int j = 0; j < 30; ++j)
-	for (volatile int i = 0; i < 9999; ++i)
-	drive_turn('E');
-	for (volatile int j = 0; j < 30; ++j)
-	for (volatile int i = 0; i < 9999; ++i)
-	stop();
-}
   while(1)
   {
 	  switch(com_instr) {
@@ -93,7 +81,7 @@ while (1)
 		  case 0x01:
 			  drive_40_cm('N');
 			  com_instr = 'X';
-				UART_Transmit_Instr_Done();
+			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x02:
@@ -111,7 +99,7 @@ while (1)
 		  case 0x04:
 			  drive_turn('W');
 			  com_instr = 'X';
-        UART_Transmit_Instr_Done();
+			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x05:

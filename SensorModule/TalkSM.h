@@ -69,14 +69,6 @@ ISR(USART1_RX_vect)
 		UART_Transmit_SM(rightValue);
 		ReflectSensor_StoreValue();
 	}
-	else if (inData == 'C')
-	{	//	set flag, will calibrate before reading next value from gyro
-		UART_Transmit_SM(shouldCalibrate);
-		shouldCalibrate = 1;
-	}
-	else if (inData = 'D')
-	{	//	Fetch bool, is true if it is still calibrating
-		UART_Transmit_SM(shouldCalibrate);
-	}
+
 		
 }
