@@ -15,6 +15,7 @@ volatile int16_t sensor_gyro = 0;
 volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
 uint16_t reflex_l = 0;
 uint16_t reflex_r = 0;
+volatile uint8_t ir_recived = 0;
 
 
 /***********************************
@@ -74,6 +75,7 @@ void fetch_reflex(const uint8_t index) {
       reflex_r = (reflex_r << 8);
       reflex_r |= UDR1;
       sensor = 'x';
+	  ir_recived = 1;
       break;
     default:
       sensor = 'x';

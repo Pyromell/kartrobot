@@ -84,21 +84,24 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
 // Drive 40 cm forward
 void drive_40_cm(const unsigned char dir)
 {	
-	exit_forward = 0;
+	ir_recived = 0;
+	UART_Transmit_Sen('I');
+	while (ir_recived == 0) {}   // wait for new IR DATA
+	
 	timer_10_ms = 0;
 	uint16_t reflex_l_start = reflex_l;
 	uint16_t reflex_r_start = reflex_r;
 	
-	while( (((reflex_l_start + 21) > reflex_l) || ((reflex_r_start + 21) > reflex_r)) && exit_forward == 0)
+	while( (((reflex_l_start + 20) > reflex_l) || ((reflex_r_start + 20) > reflex_r)))
 	{
-	if (timer_10_ms > 3)
-	{
-		UART_Transmit_Sen('I');
-		timer_10_ms = 0;
-	}
-	if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16) {
-		exit_forward = 1;
-	}
+		if (timer_10_ms > 3)
+		{
+			UART_Transmit_Sen('I');
+			timer_10_ms = 0;
+		}
+		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16) {
+			break;
+		}
 		control_tech();
 		drive(dir, controlled_left_speed, controlled_right_speed);
 	}
@@ -117,7 +120,7 @@ void drive_turn(const char dir)
 
 	if (dir == 'W')
 	{	
-		while(total_angle < 7500)
+		while(total_angle < 7600)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -130,7 +133,7 @@ void drive_turn(const char dir)
 	}
 	else if(dir == 'E')
 	{
-		while(total_angle < 7500)
+		while(total_angle < 7600)
 		{
 			if (timer_10_ms > 0)
 			{
@@ -143,17 +146,20 @@ void drive_turn(const char dir)
 	}
 	else if(dir == 'S')
 		{
-			while(total_angle < 15000)
+			while(total_angle < 15200)
 			{
 				if (timer_10_ms > 0)
 				{
-					total_angle += sensor_gyro * timer_10_ms;
+					total_angle += (sensor_gyro - old_gyro) * timer_10_ms;
 					UART_Transmit_Sen('G');
 					timer_10_ms = 0;
 				}
 				drive('W', 2, 2);
 			}
 		}
+	for (volatile int j = 0; j < 30; ++j)
+	for (volatile int i = 0; i < 9999; ++i)
+	stop();
 }
 
 // Drive 40 cm in the direction specified by dir.
