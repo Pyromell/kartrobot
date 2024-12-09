@@ -16,7 +16,7 @@ uint8_t rightWasHigh;
 uint8_t ReflectSensor_Init()
 {
 	ADMUX = (1 << REFS0);
-	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+	ADCSRA = (1 << ADEN) | (0 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 	dataBuffer_left = 0;
 	dataBuffer_right = 0;
 	leftWasHigh = 0;

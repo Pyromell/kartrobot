@@ -13,6 +13,4 @@ uint8_t Gyro_Calibrate();
 //	returns true if successfull
 uint8_t Gyro_Init();
 
-uint8_t shouldCalibrate = 0;
-
 #endif /* SENSORMODULE_GYRO */

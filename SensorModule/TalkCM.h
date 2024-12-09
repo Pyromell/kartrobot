@@ -54,13 +54,5 @@ ISR(USART0_RX_vect)
 		UART_Transmit_CM(rightValue);		
 		
 	}
-	else if (commandData == COMMAND_VALUE_REQUEST_Gyro_Calibrate)
-	{
-		UART_Transmit_CM(shouldCalibrate);
-		shouldCalibrate = 1;
-	}
-	else if (commandData == COMMAND_VALUE_REQUEST_Gyro_Calibrate_Status)
-	{
-		UART_Transmit_CM(shouldCalibrate);
-	}
+	
 }
