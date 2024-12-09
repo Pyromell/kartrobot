@@ -24,7 +24,7 @@ while (True):
     try:
         pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # pi_socket.settimeout(3)
-        pi_socket.connect(("192.168.62.149", 8027))
+        pi_socket.connect(("10.42.0.1", 8027))
         pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         #pi_socket.setblocking(0)
         break
