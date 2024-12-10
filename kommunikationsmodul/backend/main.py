@@ -221,14 +221,25 @@ class Command(IntEnum):
 
 def directionToCommand(direction: Direction) -> Command:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
-    if direction < currentDirection:
-        return Command.CMD_TURNLEFT
-    elif direction > currentDirection:
-        return Command.CMD_TURNRIGHT
-    elif abs(direction - currentDirection) == 2:
-        return Command.CMD_BACKWARD
-    else:
-        return Command.CMD_FORWARD
+    # if direction < currentDirection:
+    #     return Command.CMD_TURNLEFT
+    # elif direction > currentDirection:
+    #     return Command.CMD_TURNRIGHT
+    # elif abs(direction - currentDirection) == 2:
+    #     return Command.CMD_BACKWARD
+    # else:
+    #     return Command.CMD_FORWARD
+    
+    diff = (direction - currentDirection + 4) % 4
+    match diff:
+        case 0:
+            return Command.CMD_FORWARD
+        case 1:
+            return Command.CMD_TURNRIGHT
+        case 2:
+            return Command.CMD_BACKWARD
+        case 3: 
+            return Command.CMD_TURNLEFT
 
 # Init queue
 queue: LifoQueue[tuple[int, int]] = LifoQueue()
