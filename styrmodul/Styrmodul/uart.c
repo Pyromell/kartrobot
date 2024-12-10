@@ -46,7 +46,7 @@ void UART_Transmit_Sen(const unsigned char data) {
 	while(TXC1 == 1) ; // wait for the hardware to set its done flag
 }
 
-// This function sends a '0x01' for RECEIVED over UART0
+// This function sends a '0x0A' for RECEIVED over UART0
 // This should be called each time we receive a drive instr. to indicate to
 // the communication module that the drive module is currently doing a drive
 // function.
@@ -57,7 +57,7 @@ void UART_Transmit_Instr_Received()
 	while(TXC0 == 1) ;
 }
 
-// This function sends a '0x02' for DONE over UART0
+// This function sends a '0x0B' for DONE over UART0
 // This should be called each time a move instr id completed to indicate to the
 // communication module that the drive module is ready for a new drive instr
 void UART_Transmit_Instr_Done()

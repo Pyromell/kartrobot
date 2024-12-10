@@ -32,22 +32,22 @@ uint8_t speed_select(const uint8_t speed) {
 
 void north(const uint8_t speed_left, const uint8_t speed_right)
 {
-	PORTD = ( (speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x30;
+	PORTD = ((speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x30;
 }
 
 void south(const uint8_t speed_left, const uint8_t speed_right)
 {
-	PORTD = ( (speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x00;
+	PORTD = ((speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x00;
 }
 
 void west(const uint8_t speed_left, const uint8_t speed_right)
 {
-	PORTD = ( (speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x20;
+	PORTD = ((speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x20;
 }
 
 void east(const uint8_t speed_left, const uint8_t speed_right)
 {
-	PORTD = ( (speed_select(speed_left) & 0x80) | (( speed_select(speed_right) >> 1) & 0x40) ) | 0x10;
+	PORTD = ((speed_select(speed_left) & 0x80) | ((speed_select(speed_right) >> 1) & 0x40) ) | 0x10;
 }
 
 void stop()
@@ -67,7 +67,6 @@ void stop()
 
 void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
 {
-  //UART_Transmit_Instr_Received();
   switch(drive_dir)
   {
     case 'N': north(speed_left, speed_right); break;
@@ -77,7 +76,6 @@ void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
     case 'X': stop(); break;
     default: stop(); break;
   }
-  //UART_Transmit_Instr_Done();
 }
 
 
@@ -99,16 +97,20 @@ void drive_40_cm(const unsigned char dir)
 			UART_Transmit_Sen('I');
 			timer_10_ms = 0;
 		}
-		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16) {
-			break;
+
+		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16 && dir == 'N') {
+    	for (volatile int j = 0; j < 30; ++j)
+	      for (volatile int i = 0; i < 9999; ++i)
+	        asm("NOP");
+      break;
 		}
-		control_tech();
+
+		control_tech(dir);
 		if (dir == 'S') {
-		drive(dir, controlled_right_speed, controlled_left_speed);			// reversed for going backwards
-		
+		  drive(dir, controlled_right_speed, controlled_left_speed);			// reversed for going backwards
 		}
 		else {
-		drive(dir, controlled_left_speed, controlled_right_speed);
+		  drive(dir, controlled_left_speed, controlled_right_speed);
 		}
 	}
 }
@@ -164,8 +166,8 @@ void drive_turn(const char dir)
 			}
 		}
 	for (volatile int j = 0; j < 30; ++j)
-	for (volatile int i = 0; i < 9999; ++i)
-	stop();
+	  for (volatile int i = 0; i < 9999; ++i)
+	    stop();
 }
 
 // Drive 40 cm in the direction specified by dir.

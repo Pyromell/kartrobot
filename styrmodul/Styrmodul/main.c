@@ -14,9 +14,9 @@ volatile uint8_t exit_forward = 0;
 #include "drive_functions.c"
 #include "uart.c"
 /*
-
-OCRnA / OCRnB 
-
+If we should have some kind of fully variable speed,
+these are the registers used:
+OCRnA / OCRnB
 */
 
 /***********************************

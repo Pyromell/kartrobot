@@ -9,7 +9,6 @@ uint8_t byte_nr = 0; // the index of the received byte in a sequence of bytes
 uint8_t com_instr = 0x00; // received instr. from the Com. module
 unsigned char sensor = 0;
 
-
 volatile int16_t sensor_gyro_temp = 0;
 volatile int16_t sensor_gyro = 0;
 volatile uint8_t ir_data[6] = {0,0,0,0,0,0};
@@ -75,7 +74,7 @@ void fetch_reflex(const uint8_t index) {
       reflex_r = (reflex_r << 8);
       reflex_r |= UDR1;
       sensor = 'x';
-	  ir_recived = 1;
+	    ir_recived = 1;
       break;
     default:
       sensor = 'x';
