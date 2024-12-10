@@ -103,7 +103,13 @@ void drive_40_cm(const unsigned char dir)
 			break;
 		}
 		control_tech();
+		if (dir == 'S') {
+		drive(dir, controlled_right_speed, controlled_left_speed);			// reversed for going backwards
+		
+		}
+		else {
 		drive(dir, controlled_left_speed, controlled_right_speed);
+		}
 	}
 }
 
@@ -124,7 +130,7 @@ void drive_turn(const char dir)
 		{
 			if (timer_10_ms > 0)
 			{
-				total_angle += (sensor_gyro - old_gyro) * timer_10_ms;
+				total_angle += (sensor_gyro - old_gyro) * timer_10_ms;  // this is a scaled but calibrated angle 
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
 			}

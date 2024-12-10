@@ -26,8 +26,8 @@ enum wall_index {
 #define	Kp 16					// higher Kp gives a faster response but can be inaccurate if to high
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define angle_scale_factor 10  // simply used to scale the output for the switch range case
-#define dist_scale_factor 1
-#define dist_reference 20		// how far from the wall we will align
+#define dist_scale_factor 2
+#define dist_reference 19		// how far from the wall we will align
 
 // Global variables
 bool walls[4] = {0,0,0,0};
