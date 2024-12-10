@@ -206,10 +206,10 @@ def flood(goal: tuple[int, int]) -> Direction:
 def adjacentSquares(pos: tuple[int, int]) -> list[tuple[tuple[int, int], Direction]]:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     return [
-        ((pos[0], pos[1] - 1), Direction.NORTH),
-        ((pos[0] + 1, pos[1]), Direction.EAST),
         ((pos[0], pos[1] + 1), Direction.SOUTH),
+        ((pos[0] + 1, pos[1]), Direction.EAST),    
         ((pos[0] - 1, pos[1]), Direction.WEST),
+        ((pos[0], pos[1] - 1), Direction.NORTH)
     ]
 
 class Command(IntEnum):
@@ -349,14 +349,15 @@ def updateMap(sensorData: list[int]) -> None:
             delta = [ (-1, 0), (0, -1), (1, 0), (0, 1) ]
     for i in range(4):
         nextPos = tuple(map(lambda t1, t2: t1 + t2, robotPosition, delta[i]))
-        nextPosX2 = tuple(map(lambda t1, t2: t1 + t2 * 2, robotPosition, delta[i]))
+        #nextPosX2 = tuple(map(lambda t1, t2: t1 + t2 * 2, robotPosition, delta[i]))
         if not sensorData:
             pass
-        elif sensorData[i] <= 50:
-            mapData[nextPos[1]][nextPos[0]] = SquareState.WALL
-        elif 50 < sensorData[i] < 80:
-            mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
-            mapData[nextPosX2[1]][nextPosX2[0]] = SquareState.WALL
+        elif 11 <= sensorData[i] <= 30:
+            if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
+                mapData[nextPos[1]][nextPos[0]] = SquareState.WALL
+        elif 30 < sensorData[i] < 79:
+            if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
+                mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
         else:
             if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
                 mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
