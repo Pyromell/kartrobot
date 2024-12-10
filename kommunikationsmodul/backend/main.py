@@ -382,12 +382,18 @@ def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
 def sendCommandWithRetry(data: bytes) -> None:
     global driverReady
     print("command", data)
+    
     if not driverReady:
         return
+    
+
     uart_send(driver_ttyUSB, data)
+    
+    counter: int = 0
     if not DEBUG_STANDALONE_MODE:
-        while int.from_bytes(uart_recv(driver_ttyUSB), 'big') != 0x0A:
+        while int.from_bytes(uart_recv(driver_ttyUSB), 'big') != 0x0A and counter < 99999:
             uart_send(driver_ttyUSB, data)
+            counter += 1
     driverReady = False
 
 def send_stop() -> None:
@@ -467,6 +473,7 @@ def main() -> int:
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        client_socket.setsockopt(socket.TCP_NODELAY, socket.SO_REUSEADDR, 1)
         try:
             client_socket.bind(('0.0.0.0', 8027))
         except socket.error as message:
@@ -533,7 +540,7 @@ def main() -> int:
 
                     updateMap(sensorData)
                     if autoMode and sensorData:
-                        addAdjacent();
+                        addAdjacent()
                         pathfindEmpty()
                 sendSensorDataToInterface(conn, sensorData)
 
