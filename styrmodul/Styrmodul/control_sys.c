@@ -140,12 +140,12 @@ Control_system() updates the global variables table_left/right_speed in main.c
 and the interrupt that occurs every 10ms sets the drive controlled_left/right_speed = table_left/right_speed.
 This is done to update that data that the drive functions used.
 */					
-void control_tech() {
+void control_tech(const char dir) {
 	evaluate_walls();
 	
 
 	// if the wheel is kissing the wall then its a problem
-	if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16)
+	if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16 && dir == 'N')
 	{
   	table_left_speed  = 0;
   	table_right_speed = 0;
