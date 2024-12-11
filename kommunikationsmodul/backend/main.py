@@ -56,7 +56,7 @@ sensor_ttyUSB: serial.Serial | None = None
 try:
     driver_ttyUSB = serial.Serial(
         port='/dev/ttyUSB0',
-        baudrate=9600,
+        baudrate=19200,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_TWO,
@@ -64,7 +64,7 @@ try:
     )
     sensor_ttyUSB = serial.Serial(
         port='/dev/ttyUSB1',
-        baudrate=9600,
+        baudrate=19200,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_TWO,
@@ -88,19 +88,16 @@ def uart_recv(ttyUSB: serial.Serial | None) -> bytes:
         return readBuf
     return b''
 
-def get_interface_data(conn) -> int:
+def get_interface_data(conn) -> int | None:
     ready = select.select([conn], [], [], 0)
-    try:
-        if ready[0]:
-            data = conn.recv(64)
-            if len(data) == 0:
-                print('Disconnected')
-                return -1
-            print(len(data))
-            return int.from_bytes(data, 'big')
-        return -2
-    except select.error:
-        print("DISCONNECTED")
+    if ready[0]:
+        data = conn.recv(64)
+        if len(data) == 0:
+            print('Disconnected')
+            return -1
+        print(len(data))
+        return int.from_bytes(data, 'big')
+    return None
 
 # 1 = börjat köra, 2 = klar
 def getDriverData() -> bool:
@@ -307,7 +304,10 @@ def addAdjacent():
 
 def getSensorData() -> list[int] | None:
     uart_send(sensor_ttyUSB, (253).to_bytes(1, 'big'))
-    readBuf: bytes = uart_recv(sensor_ttyUSB)
+    print("=?=")
+    readBuf: list[int] = uart_recv(sensor_ttyUSB)
+    print("LEMN", len(readBuf))
+    
     if readBuf:
         print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
         print("FR", int.from_bytes(readBuf[0:1], 'big', signed=False))
@@ -365,17 +365,21 @@ def updateMap(sensorData: list[int]) -> None:
 
 def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
-    pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
+    #print("SENDDDDDDDD\n")
+    pickled_data = pickle.dumps({ "mapData": mapData, 'sensors': sensorData})
     length: int = len(pickled_data)
-    msg = struct.pack("<I", length) + pickled_data
+    #msg = struct.pack("<I", length) + pickled_data
     
     try:
-        conn.sendall(struct.pack("<I", length) + pickled_data)
-        pass
+        ready = select.select([], [conn], [], 0)
+        if ready[1]:
+            print("trying to send...")
+            conn.sendall(struct.pack("<I", length) + pickled_data)
+            print("finished sending...")
     except ConnectionResetError:
         print("WARN: Connection reset")
         return False
-    print("sending donne")
+    #print("sending donne")
     return True
 
 def sendCommandWithRetry(data: bytes) -> None:
@@ -388,9 +392,6 @@ def sendCommandWithRetry(data: bytes) -> None:
 
     uart_send(driver_ttyUSB, data)
     
-    if not DEBUG_STANDALONE_MODE:
-        while int.from_bytes(uart_recv(driver_ttyUSB), 'big') != 0x0A:
-            uart_send(driver_ttyUSB, data)
     driverReady = False
 
 def send_stop() -> None:
@@ -470,7 +471,8 @@ def main() -> int:
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        client_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
+        #client_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
+
         try:
             client_socket.bind(('0.0.0.0', 8027))
         except socket.error as message:
@@ -483,6 +485,8 @@ def main() -> int:
 
         while True:
             conn, address = client_socket.accept()
+            #conn.settimeout(0.1)
+            #conn.setblocking(0)
             print('Got new connection')
             while True:
                 print("LOOP")
@@ -536,10 +540,12 @@ def main() -> int:
                         sensorData = getSimulatedSensorData()
 
                     updateMap(sensorData)
-                    sendSensorDataToInterface(conn, sensorData)
                     if autoMode and sensorData:
                         addAdjacent()
                         pathfindEmpty()
+                
+                sendSensorDataToInterface(conn, sensorData)
+                #time.sleep(1)
 
     except KeyboardInterrupt:
         if sensor_ttyUSB and sensor_ttyUSB.is_open:
