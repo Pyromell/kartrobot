@@ -180,19 +180,21 @@ void drive_turn(const char dir)
   if we have walls there, we will drive forward/reverse until we reach
   the desired values: correct_front_dist/correct_back_dist
 */
-#define correct_front_dist 20
-#define correct_back_dist 20
+#define correct_front_dist 16
+#define correct_back_dist 16
 
-void calibrate_FB() {
+void calibrate_FB(const char dir) {
   ir_recived = 0;
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
   evauate_walls();
 
-  if (walls[Wall_F] && ir_data[Sen_F] > 16)
+  if (walls[Wall_F] && ir_data[Sen_F] > correct_front_dist)
 	drive_40_cm('N');
-  else if (walls[Wall_B] && ir_data[Sen_B] > 16)
+  else if (walls[Wall_B] && ir_data[Sen_B] > correct_back_dist)
 	drive_40_cm('S');
+
+  stop();
 }
 
 void calibrate_angle() {
@@ -220,8 +222,7 @@ void calibrate_angle() {
 			stop();
 		}
 	}
-
-	if (walls[Wall_R]) {
+	else if (walls[Wall_R]) {
 		while (ir_data[Sen_RF] != ir_data[Sen_RB]) {
 			if (ir_data[Sen_RF] > ir_data[Sen_RB]) {
 				if (timer_10_ms > 3) {
@@ -240,101 +241,8 @@ void calibrate_angle() {
 			stop();
 		}
 	}	
-}
+}  
 
-
-
-void calibrate_FB_1() {
-  ir_recived = 0;
-  UART_Transmit_Sen('I');
-  while (ir_recived == 0) {}
-  evaluate_walls();
-
-  if (walls[Wall_F]) {
-    while (Sen_F != correct_front_dist) {
-      ir_recived = 0;
-      UART_Transmit_Sen('I');
-      while (ir_recived == 0) {}
-      evaluate_walls();
-
-      if(ir_data[Sen_F] < correct_front_dist) {
-        for(int j = 0; j <8; ++j)
-          for(int i = 0; i <10000; ++i)
-            stop();
-		for(int i = 0; i <20000; ++i)
-          drive('S',1,1);
-      }
-      else if(ir_data[Sen_F] > correct_front_dist) {
-        for(int j = 0; j <8; ++j)
-          for(int i = 0; i <10000; ++i)
-            stop();
-	    for(int i = 0; i <20000; ++i)
-          drive('N',1,1);
-      }
-    }
-  }
-/*
-  if (walls[Wall_B]) {
-    while (Sen_B != correct_back_dist) {
-      ir_recived = 0;
-      UART_Transmit_Sen('I');
-      while (ir_recived == 0) {}
-      evaluate_walls();
-
-      if(ir_data[Sen_B] < correct_back_dist) {
-        drive('N',6,6);
-      }
-      else if(ir_data[Sen_B] > correct_back_dist) {
-        drive('S',6,6);
-      }
-    }
-  }*/
-}
-
-#define correct_left_dist 20
-#define correct_right_dist 20
-
-void calibrate_angle() {
-  UART_Transmit_Sen('I');
-  for (volatile int j = 0; j < 30; ++j)
-    for (volatile int i = 0; i < 9999; ++i)
-      asm("NOP");
-  evaluate_walls();
-  
-  if (walls[Wall_L] && walls[Wall_R]) {
-    while (Sen_LF != Sen_LB) {
-      while (Sen_LF < Sen_LB) {
-      }
-      while (Sen_LF > Sen_LB) {
-      }
-    }    
-  }
-  else if (walls[Wall_L]) {
-    
-  }
-  else if (walls[Wall_R]) {
-    
-  }
-}
-
-void calibrate_LR() {
-  UART_Transmit_Sen('I');
-  for (volatile int j = 0; j < 30; ++j)
-    for (volatile int i = 0; i < 9999; ++i)
-      asm("NOP");
-  evaluate_walls();
-  
-  if (walls[Wall_L] && walls[Wall_R]) {
-
-  }
-  else if (walls[Wall_L]) {
-    
-  }
-  else if (walls[Wall_R]) {
-    
-  }
-}
-  
   /*
   i en korre om den inte står för nära en vägg:
   vänd åt sidan med längst avstånd, kör tills Sen_F == Sen_B
