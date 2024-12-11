@@ -26,7 +26,7 @@ enum wall_index {
 #define	Kp 16					// higher Kp gives a faster response but can be inaccurate if to high
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define angle_scale_factor 10  // simply used to scale the output for the switch range case
-#define dist_scale_factor 2
+#define dist_scale_factor 3
 #define dist_reference 19		// how far from the wall we will align
 
 // Global variables
@@ -90,9 +90,9 @@ void evaluate_walls()
   if(walls[Wall_R] && walls[Wall_L])
   {
 	  if (ir_data[Sen_RF] + ir_data[Sen_RB] < ir_data[Sen_LF] + ir_data[Sen_LB])
-		walls[Wall_L] = 0;
+		  walls[Wall_L] = 0;
 	  else
-		walls[Wall_R] = 0;
+		  walls[Wall_R] = 0;
   }
 }
 
@@ -143,23 +143,37 @@ This is done to update that data that the drive functions used.
 void control_tech(const char dir) {
 	evaluate_walls();
 	
-
 	// if the wheel is kissing the wall then its a problem
 	if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16 && dir == 'N')
 	{
   	table_left_speed  = 0;
   	table_right_speed = 0;
 	}
-	else if (walls[Wall_L]) // control with left sensors
+  else if(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 16 && dir == 'S')
+  {
+    table_left_speed  = 0;
+    table_right_speed = 0;
+  }
+	else if (walls[Wall_L] && dir == 'N') // control with left sensors
 	{
 		double angle = trig_angle(ir_data[Sen_LF], ir_data[Sen_LB]);			// calculate angle, negative angle means turn right, positive angle means turn left
 		control_system(angle, ir_data[Sen_LF], ir_data[Sen_LB]);
 	}
-	else if (walls[Wall_R]) // control with left sensors
+	else if (walls[Wall_R] && dir == 'N') // control with left sensors
 	{
 		double angle = trig_angle(ir_data[Sen_RB], ir_data[Sen_RF]);
 		control_system(angle, ir_data[Sen_RB], ir_data[Sen_RF]);		// Inverted order of arguments since each side is inverted logic
 	}
+  else if (walls[Wall_L] && dir == 'S') // control with left sensors
+  {
+    double angle = trig_angle(ir_data[Sen_LB], ir_data[Sen_LF]);			// calculate angle, negative angle means turn right, positive angle means turn left
+    control_system(angle, ir_data[Sen_LB], ir_data[Sen_LF]);
+  }
+  else if (walls[Wall_R] && dir == 'S') // control with left sensors
+  {
+    double angle = trig_angle(ir_data[Sen_RF], ir_data[Sen_RB]);
+    control_system(angle, ir_data[Sen_RF], ir_data[Sen_RB]);		// Inverted order of arguments since each side is inverted logic
+  }
 	else // IF WE ARE HERE => NO WALL veri bad
 	{
 		table_left_speed  = 1;
