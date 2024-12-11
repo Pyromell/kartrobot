@@ -79,24 +79,30 @@ int main(void)
 			  break;
 
 		  case 0x01:
+			  calibrate_FB();
 			  drive_40_cm('N');
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x02:
+			  calibrate_FB();
 			  drive_40_cm('S');
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x03:
+			  calibrate_angle();
+			  calibrate_FB();
 			  drive_turn('E');
 			  com_instr = 'X';
               UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
+			  calibrate_angle();
+			  calibrate_FB();
 			  drive_turn('W');
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
