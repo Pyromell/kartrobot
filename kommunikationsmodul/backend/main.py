@@ -34,7 +34,6 @@ class SquareState(IntEnum):
     EMPTY = 1
     WALL = 2
     ROBOT = 3
-    START = 4
 
 currentDirection: Direction = Direction.NORTH
 autoMode: bool = False
@@ -43,11 +42,10 @@ mapData: list[list[SquareState]] = [
     [SquareState.UNKNOWN for _ in range(75)]
     for _ in range(75)
 ]
-mapData[38][37] = SquareState.START
 
 # NOTE: (x, y)
-lastPosition: tuple[int, int] = (37, 38)
-robotPosition: tuple[int, int] = (37, 38)
+lastPosition: tuple[int, int] = (37, 37)
+robotPosition: tuple[int, int] = (37, 37)
 
 driverReady: bool = True
 driver_ttyUSB: serial.Serial | None = None
@@ -105,11 +103,11 @@ def getDriverData() -> bool:
         return True
     readBuf: bytes = uart_recv(driver_ttyUSB)
     print(readBuf)
-    print("get driver data")
+    print("gettin driver data ...")
     if readBuf:
         print("read " + str(len(readBuf)) + " amount of bytes from DRIVER")
     if int.from_bytes(readBuf, 'big') == 0x0B:
-        print("DRIVER IS READY")
+        #print("DRIVER IS READY")
         return True
     else:
         return False
@@ -138,10 +136,10 @@ fakeWalls: dict[tuple[int, int], bool] = {
     (33, 40): True,
     (34, 40): True,
     (35, 40): True,
+    (35, 36): True, #  ADDED
     (36, 38): True,
     (36, 39): True,
-    (37, 38): False, # "ingång"
-    # (37, 38): True,
+    (37, 38): True,
     
     # Köksön
     (34, 37): True,
@@ -170,7 +168,7 @@ def getSimulatedSensorData() -> list[int]:
             checkPos: tuple[int, int] = tuple(map(lambda t1, t2: t1 + t2 * distance, robotPosition, delta[d]))
             try:
                 if fakeWalls[checkPos]:
-                    fakeSensorData.append(10 + floor((distance-1)*50 + (random() * 10.0 - 5.0)))
+                    fakeSensorData.append(11 + floor((distance-1)*50))
                     break
             except KeyError:
                 pass
@@ -183,6 +181,7 @@ def flood(goal: tuple[int, int]) -> Direction:
     floodQueue: Queue[tuple[tuple[int, int], list[Direction]]] = Queue()
     floodVisited: set[tuple[int, int]] = set()
     floodQueue.put((robotPosition, []))
+    print("GOAL", goal)
 
     while not floodQueue.empty():
         next_square, path_there = floodQueue.get()
@@ -250,50 +249,56 @@ def pathfindEmpty():
         if robotPosition != (37, 37):
             queue.put((37, 37))
         else:
-            moveToDirection(Direction.SOUTH)
+            # moveToDirection(Direction.SOUTH)
             autoMode = False
             return
     next_square = queue.get()
+    if robotPosition == next_square:
+        return
     lastPosition = robotPosition
-    while robotPosition != next_square:
-        nextDirection: Direction = flood(next_square)
-        moveToDirection(nextDirection)
+
+    nextDirection: Direction = flood(next_square)
+
+    moveToDirection(nextDirection)
+
+    if robotPosition != next_square:
+        queue.put(next_square)
+    print("exited.. pathfindEmpty")
 
 def moveToDirection(nextDirection: Direction) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
     if not driverReady:
         return
-    while True:
-        command: Command = directionToCommand(nextDirection)
-        visitedSquares.add(robotPosition)
-        sendCommandWithRetry(command.to_bytes(1, 'big'))
-        if command == Command.CMD_FORWARD:
-            match currentDirection:
-                case Direction.NORTH:
-                    robotPosition = (robotPosition[0], robotPosition[1] - 1)
-                case Direction.EAST:
-                    robotPosition = (robotPosition[0] + 1, robotPosition[1])
-                case Direction.SOUTH:
-                    robotPosition = (robotPosition[0], robotPosition[1] + 1)
-                case Direction.WEST:
-                    robotPosition = (robotPosition[0] - 1, robotPosition[1])
-            break
-        elif command == Command.CMD_BACKWARD:
-            print("BACKWARD")
-            match currentDirection:
-                case Direction.NORTH:
-                    robotPosition = (robotPosition[0], robotPosition[1] + 1)
-                case Direction.EAST:
-                    robotPosition = (robotPosition[0] - 1, robotPosition[1])
-                case Direction.SOUTH:
-                    robotPosition = (robotPosition[0], robotPosition[1] - 1)
-                case Direction.WEST:
-                    robotPosition = (robotPosition[0] + 1, robotPosition[1])
-            break
-        elif command == Command.CMD_TURNRIGHT:
-            currentDirection = Direction((currentDirection + 1) % 4)
-        elif command == Command.CMD_TURNLEFT:
-            currentDirection = Direction((currentDirection - 1) % 4)
+
+    command: Command = directionToCommand(nextDirection)
+    visitedSquares.add(robotPosition)
+    if not DEBUG_STANDALONE_MODE:
+        sendCommand(command.to_bytes(1, 'big'))
+    if command == Command.CMD_FORWARD:
+        match currentDirection:
+            case Direction.NORTH:
+                robotPosition = (robotPosition[0], robotPosition[1] - 1)
+            case Direction.EAST:
+                robotPosition = (robotPosition[0] + 1, robotPosition[1])
+            case Direction.SOUTH:
+                robotPosition = (robotPosition[0], robotPosition[1] + 1)
+            case Direction.WEST:
+                robotPosition = (robotPosition[0] - 1, robotPosition[1])
+    elif command == Command.CMD_BACKWARD:
+        print("BACKWARD")
+        match currentDirection:
+            case Direction.NORTH:
+                robotPosition = (robotPosition[0], robotPosition[1] + 1)
+            case Direction.EAST:
+                robotPosition = (robotPosition[0] - 1, robotPosition[1])
+            case Direction.SOUTH:
+                robotPosition = (robotPosition[0], robotPosition[1] - 1)
+            case Direction.WEST:
+                robotPosition = (robotPosition[0] + 1, robotPosition[1])
+    elif command == Command.CMD_TURNRIGHT:
+        currentDirection = Direction((currentDirection + 1) % 4)
+    elif command == Command.CMD_TURNLEFT:
+        currentDirection = Direction((currentDirection - 1) % 4)
 
 def addAdjacent():
     for adjSq, _ in adjacentSquares(robotPosition):
@@ -303,9 +308,9 @@ def addAdjacent():
 
 def getSensorData() -> list[int] | None:
     uart_send(sensor_ttyUSB, (253).to_bytes(1, 'big'))
-    print("=?=")
+    print("gettin sensor data ... ")
     readBuf: list[int] = uart_recv(sensor_ttyUSB)
-    print("LEMN", len(readBuf))
+    print("read sensor data !!!", len(readBuf))
     
     if readBuf:
         print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
@@ -326,9 +331,9 @@ def getSensorData() -> list[int] | None:
 
         return [
             int.from_bytes(readBuf[2:3], 'big', signed=False),
-            int.from_bytes(readBuf[0:1], 'big', signed=False), 
+            int.from_bytes(readBuf[3:4], 'big', signed=False), 
             int.from_bytes(readBuf[5:6], 'big', signed=False), 
-            int.from_bytes(readBuf[1:2], 'big', signed=False), 
+            int.from_bytes(readBuf[4:5], 'big', signed=False), 
          ]
     return None
 
@@ -352,13 +357,10 @@ def updateMap(sensorData: list[int]) -> None:
         if not sensorData:
             pass
         elif 11 <= sensorData[i] <= 30:
-            if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
-                mapData[nextPos[1]][nextPos[0]] = SquareState.WALL
+            mapData[nextPos[1]][nextPos[0]] = SquareState.WALL
         elif 30 < sensorData[i]:
-            if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
-                mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
-    if mapData[lastPosition[1]][lastPosition[0]] != SquareState.START:
-        mapData[lastPosition[1]][lastPosition[0]] = SquareState.EMPTY
+            mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
+    mapData[lastPosition[1]][lastPosition[0]] = SquareState.EMPTY
     mapData[robotPosition[1]][robotPosition[0]] = SquareState.ROBOT
 
 
@@ -372,9 +374,9 @@ def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
     try:
         ready = select.select([], [conn], [], 0)
         if ready[1]:
-            print("trying to send...")
+            print("Sending sensor data to interface...")
             conn.sendall(struct.pack("<I", length) + pickled_data)
-            print("finished sending...")
+            print("finished sending sensor data to interface...")
     except ConnectionResetError:
         print("WARN: Connection reset")
         return False
@@ -386,14 +388,13 @@ def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
 #       - läs från styrmodul om: commandQueue or not drivrReady
 #         - om tillbaka 0x0A: sätt commandQueue till None; sätt driverReady till False
 #         - om tillbaka 0x0B: sätt driverReady till True
-def sendCommandWithRetry(data: bytes) -> None:
+def sendCommand(data: bytes) -> None:
     global driverReady
     print("command", data)
     
     if not driverReady:
         return
     
-
     uart_send(driver_ttyUSB, data)
     
     driverReady = False
@@ -407,9 +408,9 @@ def send_forward(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending fram', short)
     if short:
-        sendCommandWithRetry((5).to_bytes(1, 'big'))
+        sendCommand((5).to_bytes(1, 'big'))
     else:
-        sendCommandWithRetry((1).to_bytes(1, 'big'))
+        sendCommand((1).to_bytes(1, 'big'))
         lastPosition = robotPosition
         match currentDirection:
            case Direction.NORTH:
@@ -425,9 +426,9 @@ def send_backward(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending back', short)
     if short:
-        sendCommandWithRetry((6).to_bytes(1, 'big'))
+        sendCommand((6).to_bytes(1, 'big'))
     else:
-        sendCommandWithRetry((2).to_bytes(1, 'big'))
+        sendCommand((2).to_bytes(1, 'big'))
         lastPosition = robotPosition
         match currentDirection:
            case Direction.NORTH:
@@ -443,18 +444,18 @@ def turn_right(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang höger')
     if short:
-        sendCommandWithRetry((7).to_bytes(1, 'big'))
+        sendCommand((7).to_bytes(1, 'big'))
     else:
-        sendCommandWithRetry((3).to_bytes(1, 'big'))
+        sendCommand((3).to_bytes(1, 'big'))
         currentDirection = Direction((int(currentDirection) + 1) % 4)
 
 def turn_left(short: bool) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     print('sending svang vänster')
     if short:
-        sendCommandWithRetry((8).to_bytes(1, 'big'))
+        sendCommand((8).to_bytes(1, 'big'))
     else:
-        sendCommandWithRetry((4).to_bytes(1, 'big'))
+        sendCommand((4).to_bytes(1, 'big'))
         currentDirection = Direction((int(currentDirection) + 3) % 4)
 
 
@@ -483,12 +484,15 @@ def main() -> int:
             print(message)
             sys.exit(8)
         client_socket.listen(9)
+        
+        print("waiting for client to connect")
+        conn, address = client_socket.accept()
 
-        # Börja med att köra framåt
-        send_forward(False)
+        # send_forward(False)
 
         while True:
-            conn, address = client_socket.accept()
+            #conn, address = client_socket.accept()
+                
             #conn.settimeout(0.1)
             #conn.setblocking(0)
             print('Got new connection')
@@ -500,21 +504,29 @@ def main() -> int:
                         send_stop()
                         pass
                     case 1:
-                        send_forward(False)
+                        if not autoMode:
+                            send_forward(False)
                     case 2:
-                        send_backward(False)
+                        if not autoMode:
+                            send_backward(False)
                     case 3:
-                        turn_right(False)
+                        if not autoMode:
+                            turn_right(False)
                     case 4:
-                        turn_left(False)
+                        if not autoMode:
+                            turn_left(False)
                     case 6:
-                        send_forward(True)
+                        if not autoMode:
+                            send_forward(True)
                     case 6:
-                        send_backward(True)
+                        if not autoMode:
+                            send_backward(True)
                     case 7:
-                        turn_right(True)
+                        if not autoMode:
+                            turn_right(True)
                     case 8:
-                        turn_left(True)
+                        if not autoMode:
+                            turn_left(True)
                     case 9:
                         autoMode = not autoMode
                         continue
@@ -522,7 +534,7 @@ def main() -> int:
                         return 0
                     case -1:
                         print("Broken network connection")
-                        break
+                        return 2
                 if not driverReady:
                     driverReady = getDriverData()
 
@@ -531,20 +543,22 @@ def main() -> int:
                     # sensorData = getSensorData()
                     if not DEBUG_STANDALONE_MODE:
                         sensorData = getSensorData()
+                        sensorData = getSimulatedSensorData()
                     else:
                         sensorData = getSimulatedSensorData()
 
-                    if not commandSendQueue.empty():
-                        retryCommand()
                     updateMap(sensorData)
-                    elif autoMode and sensorData:
+                    if autoMode and sensorData:
                         addAdjacent()
                         pathfindEmpty()
                 
+                # autoMode = False
                 sendSensorDataToInterface(conn, sensorData)
                 #time.sleep(1)
 
     except KeyboardInterrupt:
+        print("breakpoint...")
+        breakpoint()
         if sensor_ttyUSB and sensor_ttyUSB.is_open:
             sensor_ttyUSB.close()
         if driver_ttyUSB and driver_ttyUSB.is_open:
