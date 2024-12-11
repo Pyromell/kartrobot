@@ -25,6 +25,8 @@ uint8_t speed_select(const uint8_t speed) {
 			return TCNT0 | TCNT1 | TCNT2; // 87,5% on, 12,5% off
 		case 0x05:
 			return 0xFF; // FULL POWER!
+    case 0x06:
+			return TCNT0 & TCNT1 & TCNT2;
 		default:
 			return TCNT0; // 50% on, 50 % off
 	}
@@ -65,7 +67,7 @@ void stop()
 	X: Stop
 ***********************************/
 
-void drive(uint8_t drive_dir, uint8_t speed_left, uint8_t speed_right)
+void drive(const uint8_t drive_dir, const uint8_t speed_left, const uint8_t speed_right)
 {
   switch(drive_dir)
   {
@@ -99,19 +101,20 @@ void drive_40_cm(const unsigned char dir)
 		}
 
 		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16 && dir == 'N') {
-    	for (volatile int j = 0; j < 30; ++j)
-	      for (volatile int i = 0; i < 9999; ++i)
-	        asm("NOP");
-      break;
+		  for (volatile int j = 0; j < 30; ++j)
+			  for (volatile int i = 0; i < 9999; ++i)
+			    stop();
+		  break;
+		}
+		else if(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 16 && dir == 'S') {
+		  for (volatile int j = 0; j < 30; ++j)
+			for (volatile int i = 0; i < 9999; ++i)
+			  stop();
+		  break;
 		}
 
 		control_tech(dir);
-		if (dir == 'S') {
-		  drive(dir, controlled_right_speed, controlled_left_speed);			// reversed for going backwards
-		}
-		else {
-		  drive(dir, controlled_left_speed, controlled_right_speed);
-		}
+    drive(dir, controlled_left_speed, controlled_right_speed);
 	}
 }
 
@@ -153,50 +156,138 @@ void drive_turn(const char dir)
 		}
 	}
 	else if(dir == 'S')
-		{
-			while(total_angle < 15200)
-			{
-				if (timer_10_ms > 0)
-				{
-					total_angle += (sensor_gyro - old_gyro) * timer_10_ms;
-					UART_Transmit_Sen('G');
-					timer_10_ms = 0;
-				}
-				drive('W', 2, 2);
-			}
-		}
+	{
+  	while(total_angle < 15200)
+  	{
+    	if (timer_10_ms > 0)
+    	{
+      	total_angle += (sensor_gyro - old_gyro) * timer_10_ms;
+      	UART_Transmit_Sen('G');
+      	timer_10_ms = 0;
+    	}
+    	drive('W', 2, 2);
+  	}
+	}
 	for (volatile int j = 0; j < 30; ++j)
 	  for (volatile int i = 0; i < 9999; ++i)
 	    stop();
 }
 
-// Drive 40 cm in the direction specified by dir.
-// Ex: If drive_40_cm_dir('W') is called
-// The robot will turn left (90 degrees) and then drive 40 cm
-void drive_40_cm_dir(char dir)
-{
-	switch (dir)
-	{
-		case 'N':
-			drive_40_cm('N');
-			break;
-		case 'S': // Turn left twice to achieve a pi turn :)
-			drive_turn('L');
-			drive_turn('L');
-			drive_40_cm('N');
-			break;
-		case 'E':
-			drive_turn('R');
-			drive_40_cm('N');
-			break;
-		case 'W':
-			drive_turn('L');
-			drive_40_cm('N');
-			break;
-		default:
-			break;
-	}
+
+
+/*
+  This function should find if we have a wall to our front and/or back
+  if we have walls there, we will drive forward/reverse until we reach
+  the desired values: correct_front_dist/correct_back_dist
+*/
+#define correct_front_dist 20
+#define correct_back_dist 20
+
+void calibrate_FB() {
+  ir_recived = 0;
+  UART_Transmit_Sen('I');
+  while (ir_recived == 0) {}
+  evaluate_walls();
+
+  if (walls[Wall_F]) {
+    while (Sen_F != correct_front_dist) {
+      ir_recived = 0;
+      UART_Transmit_Sen('I');
+      while (ir_recived == 0) {}
+      evaluate_walls();
+
+      if(ir_data[Sen_F] < correct_front_dist) {
+        for(int j = 0; j <8; ++j)
+          for(int i = 0; i <10000; ++i)
+            stop();
+		for(int i = 0; i <20000; ++i)
+          drive('S',1,1);
+      }
+      else if(ir_data[Sen_F] > correct_front_dist) {
+        for(int j = 0; j <8; ++j)
+          for(int i = 0; i <10000; ++i)
+            stop();
+	    for(int i = 0; i <20000; ++i)
+          drive('N',1,1);
+      }
+    }
+  }
+/*
+  if (walls[Wall_B]) {
+    while (Sen_B != correct_back_dist) {
+      ir_recived = 0;
+      UART_Transmit_Sen('I');
+      while (ir_recived == 0) {}
+      evaluate_walls();
+
+      if(ir_data[Sen_B] < correct_back_dist) {
+        drive('N',6,6);
+      }
+      else if(ir_data[Sen_B] > correct_back_dist) {
+        drive('S',6,6);
+      }
+    }
+  }*/
 }
+
+#define correct_left_dist 20
+#define correct_right_dist 20
+
+void calibrate_angle() {
+  UART_Transmit_Sen('I');
+  for (volatile int j = 0; j < 30; ++j)
+    for (volatile int i = 0; i < 9999; ++i)
+      asm("NOP");
+  evaluate_walls();
+  
+  if (walls[Wall_L] && walls[Wall_R]) {
+    while (Sen_LF != Sen_LB) {
+      while (Sen_LF < Sen_LB) {
+      }
+      while (Sen_LF > Sen_LB) {
+      }
+    }    
+  }
+  else if (walls[Wall_L]) {
+    
+  }
+  else if (walls[Wall_R]) {
+    
+  }
+}
+
+void calibrate_LR() {
+  UART_Transmit_Sen('I');
+  for (volatile int j = 0; j < 30; ++j)
+    for (volatile int i = 0; i < 9999; ++i)
+      asm("NOP");
+  evaluate_walls();
+  
+  if (walls[Wall_L] && walls[Wall_R]) {
+
+  }
+  else if (walls[Wall_L]) {
+    
+  }
+  else if (walls[Wall_R]) {
+    
+  }
+}
+  
+  /*
+  i en korre om den inte står för nära en vägg:
+  vänd åt sidan med längst avstånd, kör tills Sen_F == Sen_B
+  vänd tillbaka
+  
+  i ett hörn om den inte står för nära ett hörn:
+    Om fram eller bak är för kort/långt avstånd:
+      backa/ kör frammåt
+    Om sidorna är för lågt eller kort:
+      Vänd åt den sidan som inte har en vägg
+      kör frammåt/bakåt
+
+  
+*/
 
 ///////////////////////////////////
 // Test functions:

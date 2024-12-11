@@ -67,7 +67,7 @@ int main(void)
   PWM_Init();
   Interrupt_Init();
 
-uint8_t current_speed_l = 1, current_speed_r = 1;
+	uint8_t current_speed_l = 1, current_speed_r = 1;
 
   while(1)
   {
