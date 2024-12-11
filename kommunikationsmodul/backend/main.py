@@ -207,9 +207,9 @@ def adjacentSquares(pos: tuple[int, int]) -> list[tuple[tuple[int, int], Directi
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     return [
         ((pos[0], pos[1] + 1), Direction.SOUTH),
+        ((pos[0], pos[1] - 1), Direction.NORTH),
         ((pos[0] + 1, pos[1]), Direction.EAST),    
-        ((pos[0] - 1, pos[1]), Direction.WEST),
-        ((pos[0], pos[1] - 1), Direction.NORTH)
+        ((pos[0] - 1, pos[1]), Direction.WEST)
     ]
 
 class Command(IntEnum):
@@ -269,6 +269,7 @@ def moveToDirection(nextDirection: Direction) -> None:
         visitedSquares.add(robotPosition)
         sendCommandWithRetry(command.to_bytes(1, 'big'))
         while not driverReady:
+            print("bruh")
             driverReady = getDriverData()
         if command == Command.CMD_FORWARD:
             match currentDirection:
@@ -349,16 +350,12 @@ def updateMap(sensorData: list[int]) -> None:
             delta = [ (-1, 0), (0, -1), (1, 0), (0, 1) ]
     for i in range(4):
         nextPos = tuple(map(lambda t1, t2: t1 + t2, robotPosition, delta[i]))
-        #nextPosX2 = tuple(map(lambda t1, t2: t1 + t2 * 2, robotPosition, delta[i]))
         if not sensorData:
             pass
         elif 11 <= sensorData[i] <= 30:
             if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
                 mapData[nextPos[1]][nextPos[0]] = SquareState.WALL
-        elif 30 < sensorData[i] < 79:
-            if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
-                mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
-        else:
+        elif 30 < sensorData[i]:
             if mapData[nextPos[1]][nextPos[0]] != SquareState.START:
                 mapData[nextPos[1]][nextPos[0]] = SquareState.EMPTY
     if mapData[lastPosition[1]][lastPosition[0]] != SquareState.START:
@@ -370,9 +367,11 @@ def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     pickled_data = pickle.dumps({ 'sensors': sensorData, 'mapd': mapData})
     length: int = len(pickled_data)
-    print("sending")
+    msg = struct.pack("<I", length) + pickled_data
+    
     try:
         conn.sendall(struct.pack("<I", length) + pickled_data)
+        pass
     except ConnectionResetError:
         print("WARN: Connection reset")
         return False
@@ -389,11 +388,9 @@ def sendCommandWithRetry(data: bytes) -> None:
 
     uart_send(driver_ttyUSB, data)
     
-    counter: int = 0
     if not DEBUG_STANDALONE_MODE:
-        while int.from_bytes(uart_recv(driver_ttyUSB), 'big') != 0x0A and counter < 99999:
+        while int.from_bytes(uart_recv(driver_ttyUSB), 'big') != 0x0A:
             uart_send(driver_ttyUSB, data)
-            counter += 1
     driverReady = False
 
 def send_stop() -> None:
@@ -473,7 +470,7 @@ def main() -> int:
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        client_socket.setsockopt(socket.TCP_NODELAY, socket.SO_REUSEADDR, 1)
+        client_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
         try:
             client_socket.bind(('0.0.0.0', 8027))
         except socket.error as message:
@@ -539,10 +536,10 @@ def main() -> int:
                         sensorData = getSimulatedSensorData()
 
                     updateMap(sensorData)
+                    sendSensorDataToInterface(conn, sensorData)
                     if autoMode and sensorData:
                         addAdjacent()
                         pathfindEmpty()
-                sendSensorDataToInterface(conn, sensorData)
 
     except KeyboardInterrupt:
         if sensor_ttyUSB and sensor_ttyUSB.is_open:
