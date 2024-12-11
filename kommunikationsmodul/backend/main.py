@@ -60,7 +60,7 @@ try:
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_TWO,
-        timeout=0.1,
+        timeout=0.05,
     )
     sensor_ttyUSB = serial.Serial(
         port='/dev/ttyUSB1',
@@ -68,7 +68,7 @@ try:
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_TWO,
-        timeout=0.1,
+        timeout=0.05,
     )
 except serial.SerialException:
     print("DEBUG: UART serial objects not created")
@@ -261,13 +261,12 @@ def pathfindEmpty():
 
 def moveToDirection(nextDirection: Direction) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
+    if not driverReady:
+        return
     while True:
         command: Command = directionToCommand(nextDirection)
         visitedSquares.add(robotPosition)
         sendCommandWithRetry(command.to_bytes(1, 'big'))
-        while not driverReady:
-            print("bruh")
-            driverReady = getDriverData()
         if command == Command.CMD_FORWARD:
             match currentDirection:
                 case Direction.NORTH:
@@ -382,6 +381,11 @@ def sendSensorDataToInterface(conn, sensorData: list[int]) -> bool:
     #print("sending donne")
     return True
 
+# TODO: - Hantera uart_send command i main
+#         - om commandQueue not None: retryCommand(commandQueue)
+#       - läs från styrmodul om: commandQueue or not drivrReady
+#         - om tillbaka 0x0A: sätt commandQueue till None; sätt driverReady till False
+#         - om tillbaka 0x0B: sätt driverReady till True
 def sendCommandWithRetry(data: bytes) -> None:
     global driverReady
     print("command", data)
@@ -493,33 +497,24 @@ def main() -> int:
                 interfaceCommand = get_interface_data(conn)
                 match interfaceCommand:
                     case 0:
-                        if not autoMode:
-                            send_stop()
+                        send_stop()
                         pass
                     case 1:
-                        if not autoMode:
-                            send_forward(False)
+                        send_forward(False)
                     case 2:
-                        if not autoMode:
-                            send_backward(False)
+                        send_backward(False)
                     case 3:
-                        if not autoMode:
-                            turn_right(False)
+                        turn_right(False)
                     case 4:
-                        if not autoMode:
-                            turn_left(False)
+                        turn_left(False)
                     case 6:
-                        if not autoMode:
-                            send_forward(True)
+                        send_forward(True)
                     case 6:
-                        if not autoMode:
-                            send_backward(True)
+                        send_backward(True)
                     case 7:
-                        if not autoMode:
-                            turn_right(True)
+                        turn_right(True)
                     case 8:
-                        if not autoMode:
-                            turn_left(True)
+                        turn_left(True)
                     case 9:
                         autoMode = not autoMode
                         continue
@@ -539,8 +534,10 @@ def main() -> int:
                     else:
                         sensorData = getSimulatedSensorData()
 
+                    if not commandSendQueue.empty():
+                        retryCommand()
                     updateMap(sensorData)
-                    if autoMode and sensorData:
+                    elif autoMode and sensorData:
                         addAdjacent()
                         pathfindEmpty()
                 
