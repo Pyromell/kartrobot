@@ -1,6 +1,6 @@
 #pragma once
 #include "uart.c"
-
+#include "control_sys.c"
 // Global variables
 uint8_t wheel_marker_l = 0; // One cog index is one white 'marker' on the wheel
 uint8_t wheel_marker_r = 0;
@@ -180,28 +180,165 @@ void drive_turn(const char dir)
   if we have walls there, we will drive forward/reverse until we reach
   the desired values: correct_front_dist/correct_back_dist
 */
-#define correct_front_dist 16
-#define correct_back_dist 16
+#define correct_front_dist 13
+#define correct_back_dist 13
 
-void calibrate_FB(const char dir) {
+
+// Sen_F towards the wall
+void calibrate_F() {
   ir_recived = 0;
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
-  evauate_walls();
+  
+  if (!(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 25)); {
+    return;
+  }  
 
-  if (walls[Wall_F] && ir_data[Sen_F] > correct_front_dist)
-	drive_40_cm('N');
-  else if (walls[Wall_B] && ir_data[Sen_B] > correct_back_dist)
-	drive_40_cm('S');
+  while (ir_data[Sen_F] != correct_front_dist) {
+    if (timer_10_ms > 3) {
+      UART_Transmit_Sen('I');
+      timer_10_ms = 0;
+    }
 
+    if (ir_data[Sen_F] < correct_front_dist) {
+      drive('S',1,1);
+    }
+    else if (ir_data[Sen_F] > correct_front_dist) {
+      drive('N',1,1);
+    }
+  }
+  stop();
+}
+
+// Sen_B towards the wall
+void calibrate_B() {
+  ir_recived = 0;
+  UART_Transmit_Sen('I');
+  while (ir_recived == 0) {}
+  
+  if (!(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 25)) {
+    return;
+  }
+    
+  while (ir_data[Sen_B] != correct_back_dist) {
+    if (timer_10_ms > 3) {
+      UART_Transmit_Sen('I');
+      timer_10_ms = 0;
+    }
+
+    if (ir_data[Sen_B] < correct_back_dist) {
+      drive('N',1,1);
+    }
+    else if (ir_data[Sen_B] > correct_back_dist) {
+      drive('S',1,1);
+    }
+  }
   stop();
 }
 
 void calibrate_angle() {
+  ir_recived = 0;
+  UART_Transmit_Sen('I');
+  while (ir_recived == 0) {}
+  char dir = 'x';
+  
+  //which side do we use?
+  if (11 <= ir_data[Sen_RF] && ir_data[Sen_RB] <= 50) {
+    dir = 'R';
+  }
+  else if (11 <= ir_data[Sen_LF] && ir_data[Sen_LB] <= 50) {
+    dir = 'L';
+  }
+  else
+  {
+    return;
+  }
+
+  if (dir == 'R')
+  {
+    while (ir_data[Sen_RF] != ir_data[Sen_LB]) {
+      if (timer_10_ms > 3) {
+        UART_Transmit_Sen('I');
+        timer_10_ms = 0;
+      }
+
+      if (ir_data[Sen_RF] > ir_data[Sen_RB]) {
+        drive('E',1,1);
+      }
+      else if (ir_data[Sen_RF] < ir_data[Sen_RB]) {
+        drive('W',1,1);
+      }
+    }
+  }  
+
+  if (dir == 'L')
+  {
+    while (ir_data[Sen_LF] != ir_data[Sen_LB]) {
+      if (timer_10_ms > 3) {
+        UART_Transmit_Sen('I');
+        timer_10_ms = 0;
+      }
+
+      if (ir_data[Sen_LF] < ir_data[Sen_LB]) {
+        drive('E',1,1);
+      }
+      else if (ir_data[Sen_LF] > ir_data[Sen_LB]) {
+        drive('W',1,1);
+      }
+    }
+  }
+
+  stop();
+}
+
+void calibrate_F_old() {
+  ir_recived = 0;
+  UART_Transmit_Sen('I');
+  while (ir_recived == 0) {}
+
+  if (correct_front_dist < ir_data[Sen_F] && ir_data[Sen_F] < 20)
+  drive_40_cm('N');
+  else if (ir_data[Sen_F] < correct_front_dist) {
+    while (ir_data[Sen_F] < correct_front_dist) {
+      if (timer_10_ms > 3) {
+        UART_Transmit_Sen('I');
+        timer_10_ms = 0;
+      }
+      drive('S',1,1);
+    }
+    drive_40_cm('N');
+  }
+  stop();
+}
+
+void calibrate_B_old() {
 	ir_recived = 0;
 	UART_Transmit_Sen('I');
 	while (ir_recived == 0) {}
-	evauate_walls();
+	
+	if (correct_back_dist < ir_data[Sen_B] && ir_data[Sen_B] < 20)
+	drive_40_cm('S');
+	else if (ir_data[Sen_B] < correct_back_dist) {
+		while (ir_data[Sen_B] < correct_back_dist) {
+			if (timer_10_ms > 3) {
+				UART_Transmit_Sen('I');
+				timer_10_ms = 0;
+			}
+			drive('N',1,1);
+		}
+		drive_40_cm('S');
+	}
+	stop();
+}
+
+
+
+
+void calibrate_angle_old() {
+	ir_recived = 0;
+	UART_Transmit_Sen('I');
+	while (ir_recived == 0) {}
+	evaluate_walls();
 
 	if (walls[Wall_L]) {
 		while (ir_data[Sen_LF] != ir_data[Sen_LB]) {

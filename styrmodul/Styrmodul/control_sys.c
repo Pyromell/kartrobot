@@ -31,7 +31,7 @@ enum wall_index {
 
 // Global variables
 bool walls[4] = {0,0,0,0};
-	
+
 void lookup_table(const int input) {
 	if (input < 10 && input > -10) { // lookup table for input that sets different speeds  Look at the Matlab file for clarification regarding the calculations!!!!!
 		table_left_speed  = 1;
