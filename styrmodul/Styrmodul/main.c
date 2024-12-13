@@ -81,67 +81,58 @@ int main(void)
 		  case 0x01:
 			  drive_40_cm('N');
 			  com_instr = 'X';
+			  //calibrate_F();
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x02:
 			  drive_40_cm('S');
 			  com_instr = 'X';
+			  //calibrate_B();
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x03:
-			  calibrate_angle();
-			  calibrate_F();
-			  calibrate_B();
+			  //calibrate_angle();
 			  drive_turn('E');
-			  calibrate_F();
-			  calibrate_B();
-        calibrate_angle();
 			  com_instr = 'X';
               UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
-			  calibrate_angle();
-			  calibrate_F();
-			  calibrate_B();
+			  //calibrate_angle();
 			  drive_turn('W');
-			  calibrate_F();
-			  calibrate_B();
-        calibrate_angle();
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x05:
-			  //for (int i = 0; i < 1000; ++i)
-				//  drive('N',current_speed_l,current_speed_r);
-        calibrate_F();
+			  for (int i = 0; i < 1000; ++i)
+			  drive('N',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
 
 		  case 0x06:
-			  //for (int i = 0; i < 1000; ++i)
-				//  drive('S',current_speed_l,current_speed_r);
+			  for (int i = 0; i < 1000; ++i)
+			  drive('S',current_speed_l,current_speed_r);
         calibrate_B();
 			  com_instr = 'X';
 			  break;
 
 		  case 0x07:
-			  //for (int i = 0; i < 1000; ++i)
-				//  drive('E',current_speed_l,current_speed_r);
-			  calibrate_angle();
-        com_instr = 'X';
+			  for (int i = 0; i < 1000; ++i)
+			  drive('E',current_speed_l,current_speed_r);
+	          com_instr = 'X';
 			  break;
 
 		  case 0x08:
 			  for (int i = 0; i < 100; ++i)
-				  drive('W',current_speed_l,current_speed_r);
+			  drive('W',current_speed_l,current_speed_r);
 			  com_instr = 'X';
 			  break;
 
 		  case 0x09:
+			  //calibrate_angle();
 			  drive_turn('S');
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
