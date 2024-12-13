@@ -2,7 +2,7 @@
 #include <avr/io.h>
 
 // Defines
-#define UBRR 103 // This equals 9600 bps
+#define UBRR 51 // This equals 9600 bps
 
 /***********************************
 File Description:

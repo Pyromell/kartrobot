@@ -27,7 +27,8 @@ enum wall_index {
 #define Kd 5					// higher Kd gives a smother transition but disturbance can impact the system if it's to high
 #define angle_scale_factor 10  // simply used to scale the output for the switch range case
 #define dist_scale_factor 3
-#define dist_reference 19		// how far from the wall we will align
+#define dist_reference_close 19		// how far from the wall we will align
+#define dist_reference_far 59		// how far from the wall we will align
 
 // Global variables
 bool walls[4] = {0,0,0,0};
@@ -72,6 +73,8 @@ void evaluate_walls()
 {
   const uint8_t min_val = 11;
   const uint8_t max_val = 35;
+  //const uint8_t min_val_2 = 51;
+  //const uint8_t max_val_2 = 75;
 
   // Front wall
   walls[Wall_F] = (min_val <= ir_data[Sen_F] && ir_data[Sen_F] <= max_val);
@@ -81,11 +84,18 @@ void evaluate_walls()
   
   // Left wall
   walls[Wall_L] = ((min_val <= ir_data[Sen_LF] && ir_data[Sen_LF] <= max_val) &&
-  (min_val <= ir_data[Sen_LB] && ir_data[Sen_LB] <= max_val));
+                   (min_val <= ir_data[Sen_LB] && ir_data[Sen_LB] <= max_val));
   
+  //walls[Wall_L] |= ((min_val_2 <= ir_data[Sen_LF] && ir_data[Sen_LF] <= max_val_2) &&
+   //                (min_val_2 <= ir_data[Sen_LB] && ir_data[Sen_LB] <= max_val_2));
+  
+
   // Right wall
   walls[Wall_R] = ((min_val <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val) &&
-  (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
+                   (min_val <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val));
+
+ // walls[Wall_R] |= ((min_val_2 <= ir_data[Sen_RF] && ir_data[Sen_RF] <= max_val_2) &&
+  //                  (min_val_2 <= ir_data[Sen_RB] && ir_data[Sen_RB] <= max_val_2));
   
   if(walls[Wall_R] && walls[Wall_L])
   {
@@ -94,19 +104,33 @@ void evaluate_walls()
 	  else
 		  walls[Wall_R] = 0;
   }
+
 }
 
 void control_system(double angle, uint8_t wall_1, uint8_t wall_2) {
 	volatile int16_t output = 0;
 	double error = ((wall_1 - wall_2) /15);
 	volatile uint8_t average_dist = (wall_1 + wall_2)/2;
+  
+
 	if (error < 0) {
 		error = error * -1;
 	}
-	volatile int16_t alignment = (dist_reference - average_dist) * dist_scale_factor;
+  
+  volatile int16_t alignment = (dist_reference_close - average_dist) * dist_scale_factor;
+  /*
+  if (average_dist < 36) {
+    alignment = (dist_reference_close - average_dist) * dist_scale_factor;
+  }
+	else {
+  	alignment = (dist_reference_far - average_dist) * dist_scale_factor;
+	}
+  */
+
 	if (walls[Wall_L] && !walls[Wall_R]) {
 		alignment = alignment * -1;
 	}
+  
 	output = angle_scale_factor * angle*( Kp + Kd *error) + alignment;
 	//output = angle_scale_factor * angle * ( Kp + (Kd * error) );
 	lookup_table(output);

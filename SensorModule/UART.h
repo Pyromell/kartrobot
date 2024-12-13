@@ -3,7 +3,7 @@
 #include <avr/io.h>
 
 // Defines
-#define UBRR 103 // This equals 9600 bps
+#define UBRR 51 // This equals 9600 bps
 
 // Global variables
 uint8_t com_instr = 0x00;

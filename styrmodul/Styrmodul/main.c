@@ -59,6 +59,26 @@ The speed is not adjustable by com. module at the moment
    * 1 - 4 = increasing speed
    * 5 = max speed
 ***********************************/
+void n()
+{
+  drive_40_cm('N');
+	//calibrate_F();
+}
+void s()
+{
+  drive_40_cm('S');
+  //calibrate_B();
+}
+void e()
+{
+  calibrate_angle_complete();
+  drive_turn('E');
+}
+void w()
+{
+  calibrate_angle_complete();
+  drive_turn('W');
+}
 
 int main(void)
 {
@@ -68,7 +88,32 @@ int main(void)
   Interrupt_Init();
 
 	uint8_t current_speed_l = 1, current_speed_r = 1;
-
+    
+/*
+  drive_40_cm('S');
+  n();
+  n();
+  w();
+  n();
+  s();
+  s();
+  s();
+  n();
+  n();
+  e();
+  n();
+  n();
+  e();
+  n();
+  n();
+  s();
+  s();
+  e();
+  n();
+  n();
+  n();
+  n();
+*/
   while(1)
   {
 	  switch(com_instr) {
@@ -80,28 +125,30 @@ int main(void)
 
 		  case 0x01:
 			  drive_40_cm('N');
-			  com_instr = 'X';
-			  //calibrate_F();
+
+        com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x02:
 			  drive_40_cm('S');
-			  com_instr = 'X';
-			  //calibrate_B();
+
+        com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x03:
-			  //calibrate_angle();
+			  calibrate_angle_complete();
 			  drive_turn('E');
+
 			  com_instr = 'X';
-              UART_Transmit_Instr_Done();
+        UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
-			  //calibrate_angle();
-			  drive_turn('W');
+			  calibrate_angle_complete();
+        drive_turn('W');
+
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
@@ -132,8 +179,16 @@ int main(void)
 			  break;
 
 		  case 0x09:
-			  //calibrate_angle();
+			  calibrate_angle();
+        for (volatile int j = 0; j < 30; ++j)
+          for (volatile int i = 0; i < 9999; ++i)
+            stop();
+        calibrate_angle();
+        for (volatile int j = 0; j < 30; ++j)
+          for (volatile int i = 0; i < 9999; ++i)
+            stop();
 			  drive_turn('S');
+
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
@@ -144,3 +199,14 @@ int main(void)
 	  }
   }
 }
+/*
+while (1)
+    {
+      drive_40_cm('N');
+      drive_40_cm('S');
+      calibrate_angle_complete();
+      drive_turn('E');
+      calibrate_angle_complete();
+      drive_turn('W');
+    }
+*/

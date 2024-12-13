@@ -92,7 +92,7 @@ void drive_40_cm(const unsigned char dir)
 	uint16_t reflex_l_start = reflex_l;
 	uint16_t reflex_r_start = reflex_r;
 	
-	while( (((reflex_l_start + 20) > reflex_l) || ((reflex_r_start + 20) > reflex_r)))
+	while ( ((reflex_l_start + 20) > reflex_l) || ((reflex_r_start + 20) > reflex_r) )
 	{
 		if (timer_10_ms > 3)
 		{
@@ -100,13 +100,13 @@ void drive_40_cm(const unsigned char dir)
 			timer_10_ms = 0;
 		}
 
-		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 16 && dir == 'N') {
+		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 15 && dir == 'N') {
 		  for (volatile int j = 0; j < 30; ++j)
 			  for (volatile int i = 0; i < 9999; ++i)
 			    stop();
 		  break;
 		}
-		else if(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 16 && dir == 'S') {
+		else if(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 15 && dir == 'S') {
 		  for (volatile int j = 0; j < 30; ++j)
 			for (volatile int i = 0; i < 9999; ++i)
 			  stop();
@@ -173,39 +173,15 @@ void drive_turn(const char dir)
 	    stop();
 }
 
-
-/*
-  This function should find if we have a wall to our front and/or back
-  if we have walls there, we will drive forward/reverse until we reach
-  the desired values: correct_front_dist/correct_back_dist
-*/
-#define correct_front_dist 13
-#define correct_back_dist 13
-
 // Sen_F towards the wall
 void calibrate_F() {
   ir_recived = 0;
   timer_10_ms = 0;
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
-  
-  if (!(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 25)); {
-    return;
+    if (13 <= ir_data[Sen_F] && ir_data[Sen_F] <= 25); {
+      drive_40_cm('N');
   }  
-
-  while (ir_data[Sen_F] != correct_front_dist) {
-    if (timer_10_ms > 3) {
-      UART_Transmit_Sen('I');
-      timer_10_ms = 0;
-	}
-    if (ir_data[Sen_F] < correct_front_dist && ir_data[Sen_F] >= 11) {
-      drive('S',1,1);
-    }
-    else if (ir_data[Sen_F] > correct_front_dist && ir_data[Sen_F] <= 25) {
-      drive('N',1,1);
-	}
-  }
-	stop();
 }
 
 // Sen_B towards the wall
@@ -214,85 +190,85 @@ void calibrate_B() {
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
   
-  if (!(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 25)) {
-    return;
+  if (13 <= ir_data[Sen_B] && ir_data[Sen_B] <= 25) {
+    drive_40_cm('S');
   }
-    
-  while (ir_data[Sen_B] != correct_back_dist) {
-    if (timer_10_ms > 3) {
-      UART_Transmit_Sen('I');
-      timer_10_ms = 0;
-    }
-
-    if (ir_data[Sen_B] < correct_back_dist && ir_data[Sen_B] >= 11) {
-      drive('N',1,1);
-    }
-    else if (ir_data[Sen_B] > correct_back_dist && ir_data[Sen_B] <= 25) {
-      drive('S',1,1);
-    }
-  }
-		stop();
 }
 
 // calibrate angle to wall
 void calibrate_angle() {
   ir_recived = 0;
   timer_10_ms = 0;
+  uint8_t marginal = 1;
+  uint8_t force_exit = 0;
+
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
   char dir = 'x';
   evaluate_walls();
+
   //which side do we use?
-
   if (walls[Wall_R]) {
-    uint8_t marginal = 0;
-
-    while (((ir_data[Sen_RF] + marginal) != ir_data[Sen_RB]) && (ir_data[Sen_RF] != (ir_data[Sen_RB] + marginal))) {
-      if((ir_data[Sen_LF] + ir_data[Sen_LB]) < 40)
-        marginal = 0;
-      else if((ir_data[Sen_LF] + ir_data[Sen_LB]) < 50)
-        marginal = 1;
-      else
-        marginal = 2;
-
+    while (((ir_data[Sen_RF] + marginal) < ir_data[Sen_RB])
+         || (ir_data[Sen_RF] > (ir_data[Sen_RB] + marginal))) {
+    //while (ir_data[Sen_RF] != ir_data[Sen_RB] && force_exit < 15) {
       if (timer_10_ms > 3) {
         UART_Transmit_Sen('I');
         timer_10_ms = 0;
+        force_exit++;
       }
 
-      if (ir_data[Sen_RF] > ir_data[Sen_RB]) {
+      if (ir_data[Sen_RF] > (ir_data[Sen_RB] + 1)) {
         drive('E',2,2);
       }
-      else if (ir_data[Sen_RF] < ir_data[Sen_RB]) {
+      else if ((ir_data[Sen_RF] + 1) < ir_data[Sen_RB]) {
         drive('W',2,2);
+      }
+
+
+      if (force_exit > 10)
+      {
+        stop();
+        break;
       }
     }
   } 
   else if (walls[Wall_L]) {
-    uint8_t marginal = 0;
-
-    while (((ir_data[Sen_LF] + marginal) != ir_data[Sen_LB]) && (ir_data[Sen_LF] != (ir_data[Sen_LB] + marginal))) {
-      if((ir_data[Sen_LF] + ir_data[Sen_LB]) < 40)
-        marginal = 0;
-      else if((ir_data[Sen_LF] + ir_data[Sen_LB]) < 50)
-        marginal = 1;
-      else
-        marginal = 2;
-
+    while (((ir_data[Sen_LF] + marginal) < ir_data[Sen_LB])
+        || ( ir_data[Sen_LF] > (ir_data[Sen_LB] + marginal))) {
+//     while (ir_data[Sen_LF] != ir_data[Sen_LB] && force_exit < 15) {
       if (timer_10_ms > 3) {
         UART_Transmit_Sen('I');
         timer_10_ms = 0;
+        force_exit++;
       }
 
-      if (ir_data[Sen_LF] > ir_data[Sen_LB]) {
+      if (ir_data[Sen_LF] > (ir_data[Sen_LB] + 1) ) {
         drive('W',2,2);
       }
-      else if (ir_data[Sen_LF] < ir_data[Sen_LB]) {
+      else if ((ir_data[Sen_LF] + 1) < ir_data[Sen_LB]) {
         drive('E',2,2);
+      }
+
+      if (force_exit > 10)
+      {
+        stop();
+        break;
       }
     }
   }
 	stop();
+}
+
+void calibrate_angle_complete() {
+  calibrate_angle();
+  for (volatile int j = 0; j < 30; ++j)
+    for (volatile int i = 0; i < 9999; ++i)
+      stop();
+  calibrate_angle();
+  for (volatile int j = 0; j < 30; ++j)
+    for (volatile int i = 0; i < 9999; ++i)
+      stop();
 }
 
   /*
@@ -306,8 +282,6 @@ void calibrate_angle() {
     Om sidorna är för lågt eller kort:
       Vänd åt den sidan som inte har en vägg
       kör frammåt/bakåt
-
-  
 */
 
 ///////////////////////////////////
