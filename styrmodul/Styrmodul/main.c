@@ -88,7 +88,8 @@ int main(void)
   Interrupt_Init();
 
 	uint8_t current_speed_l = 1, current_speed_r = 1;
-    
+	timer_10_ms = 0;
+	
 /*
   drive_40_cm('S');
   n();
@@ -125,30 +126,31 @@ int main(void)
 
 		  case 0x01:
 			  drive_40_cm('N');
-
-        com_instr = 'X';
+			  calibrate_all();
+			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
-
 		  case 0x02:
 			  drive_40_cm('S');
-
-        com_instr = 'X';
+			  calibrate_all();
+              com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x03:
-			  calibrate_angle_complete();
+			  calibrate_all();
 			  drive_turn('E');
-
+			  calibrate_all();
 			  com_instr = 'X';
-        UART_Transmit_Instr_Done();
+			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
 			  calibrate_angle_complete();
-        drive_turn('W');
-
+			  calibrate_all();
+			  drive_turn('W');
+			  calibrate_all();
+			  calibrate_angle_complete();
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
@@ -162,7 +164,6 @@ int main(void)
 		  case 0x06:
 			  for (int i = 0; i < 1000; ++i)
 			  drive('S',current_speed_l,current_speed_r);
-        calibrate_B();
 			  com_instr = 'X';
 			  break;
 
@@ -179,16 +180,9 @@ int main(void)
 			  break;
 
 		  case 0x09:
-			  calibrate_angle();
-        for (volatile int j = 0; j < 30; ++j)
-          for (volatile int i = 0; i < 9999; ++i)
-            stop();
-        calibrate_angle();
-        for (volatile int j = 0; j < 30; ++j)
-          for (volatile int i = 0; i < 9999; ++i)
-            stop();
+			  calibrate_angle_complete();
 			  drive_turn('S');
-
+			  calibrate_angle_complete();
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;

@@ -92,7 +92,7 @@ void drive_40_cm(const unsigned char dir)
 	uint16_t reflex_l_start = reflex_l;
 	uint16_t reflex_r_start = reflex_r;
 	
-	while ( ((reflex_l_start + 20) > reflex_l) || ((reflex_r_start + 20) > reflex_r) )
+	while ( ((reflex_l_start + 21) > reflex_l) || ((reflex_r_start + 21) > reflex_r) )
 	{
 		if (timer_10_ms > 3)
 		{
@@ -100,13 +100,13 @@ void drive_40_cm(const unsigned char dir)
 			timer_10_ms = 0;
 		}
 
-		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 15 && dir == 'N') {
+		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 14 && dir == 'N') {
 		  for (volatile int j = 0; j < 30; ++j)
 			  for (volatile int i = 0; i < 9999; ++i)
 			    stop();
 		  break;
 		}
-		else if(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 15 && dir == 'S') {
+		else if(11 <= ir_data[Sen_B] && ir_data[Sen_B] <= 14 && dir == 'S') {
 		  for (volatile int j = 0; j < 30; ++j)
 			for (volatile int i = 0; i < 9999; ++i)
 			  stop();
@@ -116,6 +116,7 @@ void drive_40_cm(const unsigned char dir)
 		control_tech(dir);
     drive(dir, controlled_left_speed, controlled_right_speed);
 	}
+	stop();
 }
 
 // Perform a 90 degrees turn in the specified direction
@@ -179,9 +180,21 @@ void calibrate_F() {
   timer_10_ms = 0;
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
-    if (13 <= ir_data[Sen_F] && ir_data[Sen_F] <= 25); {
-      drive_40_cm('N');
-  }  
+	
+	while (17 <= ir_data[Sen_F] && ir_data[Sen_F] < 25) {
+
+		drive('N', 1, 1);
+
+		if (timer_10_ms < 3) {
+			UART_Transmit_Sen('I');
+			timer_10_ms = 0;
+		}
+		if (ir_data[Sen_F] <= 16) {
+			stop();
+			break;
+		}
+	}
+	stop();
 }
 
 // Sen_B towards the wall
@@ -190,9 +203,20 @@ void calibrate_B() {
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
   
-  if (13 <= ir_data[Sen_B] && ir_data[Sen_B] <= 25) {
-    drive_40_cm('S');
+  while (17 <= ir_data[Sen_B] && ir_data[Sen_B] < 25) {
+
+	drive('S', 1, 1);
+
+	if (timer_10_ms > 3) {
+		UART_Transmit_Sen('I');
+		timer_10_ms = 0;
+	}
+	if (ir_data[Sen_B] <= 16) {
+		stop();
+		break;
+	}
   }
+  stop();
 }
 
 // calibrate angle to wall
@@ -271,6 +295,18 @@ void calibrate_angle_complete() {
       stop();
 }
 
+
+void calibrate_all() {
+	calibrate_angle_complete();
+	if (16 <= ir_data[Sen_F] && ir_data[Sen_F] <= 22 && (walls[Wall_L] || walls[Wall_R]) ) {	
+		calibrate_F();
+	}
+	else if (16 <= ir_data[Sen_B] && ir_data[Sen_B] <= 22 && (walls[Wall_L] || walls[Wall_R]) ) {
+		calibrate_B();
+	}
+	calibrate_angle_complete();
+		
+}
   /*
   i en korre om den inte står för nära en vägg:
   vänd åt sidan med längst avstånd, kör tills Sen_F == Sen_B
