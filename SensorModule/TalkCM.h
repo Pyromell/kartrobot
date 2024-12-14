@@ -22,14 +22,14 @@ Pin Description:
 
 ISR(USART0_RX_vect) 
 {
-	uint8_t commandData = UDR0;
+	volatile uint8_t commandData = UDR0;
 	if (commandData == COMMAND_VALUE_IDENTIFY)
 	{
 		UART_Transmit_CM(MODULE_INDENTIFIER);
 	}
 	else if (commandData == COMMAND_VALUE_REQUEST_Gyro)
 	{
-        uint16_t gyroData = Gyro_ReadValue();
+        volatile uint16_t gyroData = Gyro_ReadValue();
         UART_Transmit_CM(gyroData >> 8);
         UART_Transmit_CM(gyroData);	
 		
@@ -39,15 +39,15 @@ ISR(USART0_RX_vect)
 
 		for (uint8_t i = 0; i < 6; i++)
 		{
-			uint8_t IRdata = IR_ReadValue(i);
+			volatile uint8_t IRdata = IR_ReadValue(i);
 			UART_Transmit_CM(IRdata);
 		}		
 			
 	}
 	else if (commandData == COMMAND_VALUE_REQUEST_Reflect)
 	{
-		uint16_t leftValue = ReflectSensor_GetValue_Left();
-		uint16_t rightValue = ReflectSensor_GetValue_Right();
+		volatile uint16_t leftValue = ReflectSensor_GetValue_Left();
+		volatile uint16_t rightValue = ReflectSensor_GetValue_Right();
 		UART_Transmit_CM(leftValue >> 8);
 		UART_Transmit_CM(leftValue);
 		UART_Transmit_CM(rightValue >> 8);

@@ -21,11 +21,11 @@ Pin Description:
 
 ISR(USART1_RX_vect) 
 {
-    unsigned char inData = UDR1;
+    volatile unsigned char inData = UDR1;
     UART_Transmit_SM(inData);
     if (inData == 'G')
     {
-        uint16_t gyroData = Gyro_ReadValue();
+        volatile uint16_t gyroData = Gyro_ReadValue();
         UART_Transmit_SM(gyroData >> 8);
         UART_Transmit_SM(gyroData);
     }
@@ -39,8 +39,8 @@ ISR(USART1_RX_vect)
     }
 	else if (inData == 'R')
 	{
-		uint16_t leftValue = ReflectSensor_GetValue_Left();
-		uint16_t rightValue = ReflectSensor_GetValue_Right();
+		volatile uint16_t leftValue = ReflectSensor_GetValue_Left();
+		volatile uint16_t rightValue = ReflectSensor_GetValue_Right();
 		UART_Transmit_SM(leftValue >> 8);
 		UART_Transmit_SM(leftValue);
 		UART_Transmit_SM(rightValue >> 8);
@@ -52,8 +52,8 @@ ISR(USART1_RX_vect)
 	}
 	else if (inData == 'U')
 	{
-		uint16_t leftValue = ReflectSensor_GetValue_Left_Rel();
-		uint16_t rightValue = ReflectSensor_GetValue_Right_Rel();
+		volatile uint16_t leftValue = ReflectSensor_GetValue_Left_Rel();
+		volatile uint16_t rightValue = ReflectSensor_GetValue_Right_Rel();
 		UART_Transmit_SM(leftValue >> 8);
 		UART_Transmit_SM(leftValue);
 		UART_Transmit_SM(rightValue >> 8);
@@ -61,8 +61,8 @@ ISR(USART1_RX_vect)
 	}
 	else if (inData == 'V')
 	{
-		uint16_t leftValue = ReflectSensor_GetValue_Left_Rel();
-		uint16_t rightValue = ReflectSensor_GetValue_Right_Rel();
+		volatile uint16_t leftValue = ReflectSensor_GetValue_Left_Rel();
+		volatile uint16_t rightValue = ReflectSensor_GetValue_Right_Rel();
 		UART_Transmit_SM(leftValue >> 8);
 		UART_Transmit_SM(leftValue);
 		UART_Transmit_SM(rightValue >> 8);
