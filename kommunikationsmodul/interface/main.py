@@ -25,8 +25,9 @@ while (True):
         pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # pi_socket.settimeout(3)
         pi_socket.connect(("10.42.0.1", 8027))
-        pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        #pi_socket.setblocking(0)
+        #pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        #i_socket.setblocking(1)
+        #pi_socket.settimeout(0.5)
         break
     except:
         print("Anslut till kartrobot07...")
@@ -38,7 +39,6 @@ class SquareState(Enum):
     WALL = 2
     ROBOT = 3
     START = 4
-    VISITED = 5
 
 
 class Interface():
@@ -47,6 +47,7 @@ class Interface():
     def recieve(self):
         # READ
         ready = select.select([pi_socket], [], [], 0)
+        
         if ready[0]:
             while len(self.buffer) < 4:
                 self.buffer += pi_socket.recv(4)
@@ -56,14 +57,24 @@ class Interface():
             print(length)
             self.buffer = self.buffer[4:]
             while len(self.buffer) < length:
+                print("recieving")
                 self.buffer += pi_socket.recv(1024)
+                #if not self.buffer:
+                #    break
 
+            
             messageData = pickle.loads(self.buffer)
-            self.sensorTextBox.insert(
+            
+            print(messageData)
+            
+            if messageData['sensors'] is not None:
+            #if True:
+                self.sensorTextBox.delete(1.0, END)
+                self.sensorTextBox.insert(
                 tkinter.END,
-                chars=str(messageData['sensors']),
-            )
-            for rownumber, row in enumerate(messageData['mapd']):
+                    chars=str(messageData['sensors']),
+                )
+            for rownumber, row in enumerate(messageData['mapData']):
                 for colnumber, cell in enumerate(row):
                     match cell:
                         case SquareState.UNKNOWN:
@@ -113,13 +124,14 @@ class Interface():
             self.buffer = self.buffer[length:]
         else:
             print("No data...")
-
+        pass
+            
+            
         self.tk.after(1, self.recieve)
 
     def send(self, data: bytes):
-        # WRITE
-        ready = select.select([], [pi_socket], [], 0)
-        if ready[1]:
+        ready = select.select([],[pi_socket], [], 0)
+        if ready[1]:    
             pi_socket.sendall(data)
 
     def sendStartStop(self):
