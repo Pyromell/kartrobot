@@ -3,6 +3,7 @@
 
 #include "Gyro.h"
 #include <avr/io.h>
+#include <stdlib.h>
 
 uint8_t IR_Init();
 //	returns true if successfull

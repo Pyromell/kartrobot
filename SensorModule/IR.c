@@ -14,10 +14,11 @@
 
 #define IR_dataBuffer_length 6
 volatile int16_t IR_dataBuffer[IR_dataBuffer_length];
+volatile int16_t IR_dataBuffer_adc[IR_dataBuffer_length];
 
 uint8_t IR_medianIndex = 0;
 volatile int16_t IR_median[IR_dataBuffer_length];
-volatile int16_t IR_medianBuffer[4][20];
+volatile int16_t IR_medianBuffer[6][20];
 
 
 int16_t compare (const void* a, const void* b)
@@ -28,34 +29,26 @@ int16_t compare (const void* a, const void* b)
 void IR_WriteValue(uint8_t sensorIndex, uint8_t IRdata)
 {	
 	IR_dataBuffer[sensorIndex] = IRdata;
+	IR_medianBuffer[sensorIndex][IR_medianIndex] = IRdata;
 	
-	if(sensorIndex == 0 || sensorIndex == 1 || sensorIndex == 2 || sensorIndex == 5)
+	int16_t temp_arr [20];
+	for (uint8_t i = 0 ; i <20 ; i++)
+		temp_arr[i] = IR_medianBuffer[sensorIndex][i];
+	
+	int n = sizeof(temp_arr) / sizeof(temp_arr[0]);
+	
+	qsort(temp_arr,n,sizeof(int16_t),compare);
+	
+	if (sensorIndex == 5)
 	{
-		int temp = 0;
-		if (sensorIndex == 5)
-			sensorIndex = 3;						
-
-		IR_medianBuffer[sensorIndex][IR_medianIndex] = IRdata;
-		
-		int16_t temp_arr [20];
-		for (uint8_t i = 0 ; i <20 ; i++)
-			temp_arr[i] = IR_medianBuffer[sensorIndex][i]; 
-		
-		int n =sizeof(temp_arr) / sizeof(temp_arr[0]);	
-			
- 		qsort(temp_arr,n,sizeof(int16_t),compare);
-		
-		if (sensorIndex == 3)
-		{
-			IR_medianIndex++;
-			sensorIndex = 5;
-		}
-		
+		IR_medianIndex++;
 		if(IR_medianIndex > 19)
 			IR_medianIndex = 0;
-			
-		IR_median[sensorIndex] = temp_arr[10];
 	}
+
+	
+	IR_median[sensorIndex] = temp_arr[10];
+	
 }
 uint16_t IR_ReadValue(uint8_t sensorIndex)
 {
@@ -154,6 +147,7 @@ uint16_t IR_ReadADC(uint8_t sensorIndex)
 float IR_ReadDistance_CM(uint8_t sensorIndex)
 {
 	uint16_t adcValue = IR_ReadADC(sensorIndex);
+	IR_dataBuffer_adc[sensorIndex] = adcValue;
 	float distanceCM = IR_ConvertADC(adcValue);
 	return distanceCM;
 }
