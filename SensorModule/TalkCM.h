@@ -37,9 +37,12 @@ ISR(USART0_RX_vect)
 	else if (commandData == COMMAND_VALUE_REQUEST_IR)
 	{
 
+
+		//IR_ReadValue() är den normala live IR datan
+		//IR_ReadValueMedian() medianvärdet på 20 senaste 
 		for (uint8_t i = 0; i < 6; i++)
 		{
-			volatile uint8_t IRdata = IR_ReadValue(i);
+			volatile uint8_t IRdata = IR_ReadValueMedian(i);
 			UART_Transmit_CM(IRdata);
 		}		
 			

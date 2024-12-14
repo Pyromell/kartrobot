@@ -55,6 +55,12 @@ uint16_t IR_ReadValue(uint8_t sensorIndex)
 	return IR_dataBuffer[sensorIndex];
 }
 
+uint16_t IR_ReadValueMedian(uint8_t sensorIndex)
+{
+	return IR_median[sensorIndex];
+}
+
+
 uint8_t IR_Init()
 {
 	PORTA = 0b00000000;
