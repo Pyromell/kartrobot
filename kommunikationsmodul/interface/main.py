@@ -1,9 +1,9 @@
 #!/bin/env python3
 import tkinter
 import socket
-import time
 import pickle
 import select
+import time
 from enum import Enum
 from struct import unpack
 from pprint import pp
@@ -23,14 +23,11 @@ previousPos = (37, 37)
 while (True):
     try:
         pi_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # pi_socket.settimeout(3)
         pi_socket.connect(("10.42.0.1", 8027))
-        # pi_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        # i_socket.setblocking(1)
-        # pi_socket.settimeout(0.5)
+        pi_socket.settimeout(2)
         break
     except Exception:
-        print("Anslut till kartrobot07...")
+        pass
 
 
 class SquareState(Enum):
@@ -43,27 +40,50 @@ class SquareState(Enum):
 
 class Interface():
     buffer: bytes = b''
+    lastPrint: float
 
     def recieve(self):
+        # READ
         ready = select.select([pi_socket], [], [], 0)
+
         if ready[0]:
-            while len(self.buffer) >= 4:
-                length = struct.unpack("<I", self.buffer[0:4])[0]
-                if len(self.buffer) < 4 + length:
-                    break
-                messageData = pickle.loads(self.buffer[4:4+length])
-                self.buffer = self.buffer[4+length:]
-                # SENSORS
-                if messageData['sensors']:
-                    self.sensorTextBox.delete(1.0, END)
-                    self.sensorTextBox.insert(
-                        tkinter.END, chars=str(messageData['sensors']),
-                    )
-                # MAPDATA
-                if messageData['mapData']:
-                    for rownumber, row in enumerate(messageData['mapData']):
-                        for colnumber, cell in enumerate(row):
-                            match cell:
+            try:
+                while len(self.buffer) < 4:
+                    self.buffer += pi_socket.recv(4)
+            except (socket.error, TimeoutError):
+                self.tk.after(1, self.recieve)
+                return
+
+            length = struct.unpack("<I", self.buffer[0:4])[0]
+            self.buffer = self.buffer[4:]
+            while len(self.buffer) < length:
+                self.buffer += pi_socket.recv(1024)
+                # if not self.buffer:
+                #    break
+
+            messageData = pickle.loads(self.buffer)
+
+            if messageData['sensors'] is not None:
+                # if True:
+                self.sensorTextBox.delete(1.0, END)
+                self.sensorTextBox.insert(
+                    tkinter.END,
+                    chars=str(messageData['sensors']),
+                )
+
+            now: float = time.time()
+            if messageData['mapData']:
+                if (now - self.lastPrint) >= 0.1:
+                    self.lastPrint = now
+                    robot_position: tuple[int, int] = [
+                        (colnumber, rownumber)
+                        for rownumber, row in enumerate(messageData['mapData'])
+                        for colnumber, cell in enumerate(row)
+                        if cell == SquareState.ROBOT
+                    ][0]
+                    for row in range(robot_position[1] - 1, robot_position[1] + 2):
+                        for col in range(robot_position[0] - 1, robot_position[0] + 2):
+                            match messageData['mapData'][row][col]:
                                 case SquareState.UNKNOWN:
                                     pass
                                     # self.canvas.create_rectangle(
@@ -75,41 +95,42 @@ class Interface():
                                     # )
                                 case SquareState.EMPTY:
                                     self.canvas.create_rectangle(
-                                        colnumber * 8,
-                                        rownumber * 8,
-                                        (colnumber+1) * 8,
-                                        (rownumber+1) * 8,
+                                        col * 8,
+                                        row * 8,
+                                        (col+1) * 8,
+                                        (row+1) * 8,
                                         fill='white',
                                     )
                                 case SquareState.WALL:
                                     self.canvas.create_rectangle(
-                                        colnumber * 8,
-                                        rownumber * 8,
-                                        (colnumber+1) * 8,
-                                        (rownumber+1) * 8,
+                                        col * 8,
+                                        row * 8,
+                                        (col+1) * 8,
+                                        (row+1) * 8,
                                         fill='black',
                                     )
                                 case SquareState.ROBOT:
                                     self.canvas.create_rectangle(
-                                        colnumber * 8,
-                                        rownumber * 8,
-                                        (colnumber+1) * 8,
-                                        (rownumber+1) * 8,
-                                        fill='blue',
+                                        col * 8,
+                                        row * 8,
+                                        (col+1) * 8,
+                                        (row+1) * 8,
+                                        fill='cyan',
                                     )
                                     self.positionText.delete(1.0, END)
                                     self.positionText.insert(
-                                        END, str(colnumber)+','+str(rownumber))
+                                        END, str(col)+','+str(row))
                                 case SquareState.START:
                                     self.canvas.create_rectangle(
-                                        colnumber * 8,
-                                        rownumber * 8,
-                                        (colnumber+1) * 8,
-                                        (rownumber+1) * 8,
+                                        col * 8,
+                                        row * 8,
+                                        (col+1) * 8,
+                                        (row+1) * 8,
                                         fill='lime',
                                     )
-        else:
-            print("No data...")
+
+            self.buffer = self.buffer[length:]
+
         self.tk.after(1, self.recieve)
 
     def send(self, data: bytes):
@@ -211,6 +232,7 @@ class Interface():
             text="Send Manual Toggle",
             command=self.sendManualToggle,
         )
+        self.lastPrint = time.time()
 
         # Short commands
 
@@ -239,15 +261,15 @@ class Interface():
             self.buttonFrame, bg='white', width=8, height=1)
 
         self.canvas = tkinter.Canvas(self.tk, bg='grey', width=600, height=600)
-        for colnumber in range(75):
-            for rownumber in range(75):
-                self.canvas.create_rectangle(
-                    colnumber * 8,
-                    rownumber * 8,
-                    (colnumber+1) * 8,
-                    (rownumber+1) * 8,
-                    fill='grey',
-                )
+        # for colnumber in range(75):
+        #     for rownumber in range(75):
+        #         self.canvas.create_rectangle(
+        #             colnumber * 8,
+        #             rownumber * 8,
+        #             (colnumber+1) * 8,
+        #             (rownumber+1) * 8,
+        #             fill='grey',
+        #         )
 
         self.canvas.grid(row=0, column=0)
 
