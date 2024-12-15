@@ -90,14 +90,15 @@ void IR_ADC_start(uint8_t sensorPinIndex)
 	60cm = 0.50
 	70cm = 0.45
 	80cm = 0.40
+	100cm = 0.30	(made up value)
 	
 	ADC gives 10 bits
 	VREF = 5.0f ?	
 */
 
-#define IR_TableLength 12
-uint8_t IR_DistanceTable[IR_TableLength]	= {	6,		8,		10,		15,		20,		25,		30,		40,		50,		60,		70,		80}; 
-float IR_VoltageTable[IR_TableLength]		= {	3.15f,	2.75f,	2.3f,	1.65f,	1.3f,	1.08f,	0.92f,	0.75f,	0.60f,	0.50f,	0.45f,	0.40f};
+#define IR_TableLength 13
+uint8_t IR_DistanceTable[IR_TableLength]	= {	6,		8,		10,		15,		20,		25,		30,		40,		50,		60,		70,		80,		120}; 
+float IR_VoltageTable[IR_TableLength]		= {	3.15f,	2.75f,	2.3f,	1.65f,	1.3f,	1.08f,	0.92f,	0.75f,	0.60f,	0.50f,	0.45f,	0.40f,	0.30f};
 
 float IR_ConvertADC(uint16_t adcValue)
 {
