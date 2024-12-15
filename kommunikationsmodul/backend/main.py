@@ -88,11 +88,11 @@ def uart_thread(
         # SEND
         if not send_queue.empty():
             data_to_send = send_queue.get()
-            print(ttyUSB, data_to_send)
-            recv_queue.put(b'1')
+            # print(ttyUSB, data_to_send)
             try:
                 ttyUSB.write(data_to_send)
-                print(f"Sent: {data_to_send}")
+                if ttyUSB == driver_ttyUSB:
+                    print(f"Sent: {data_to_send}")
             except serial.SerialException as e:
                 print(f"Error writing to UART: {e}")
 
@@ -101,11 +101,12 @@ def uart_thread(
             read_buf = ttyUSB.read(256)
             if read_buf:
                 recv_queue.put(read_buf)
-                print(f"Received: {read_buf}")
+                if ttyUSB == driver_ttyUSB:
+                    print(f"Received: {read_buf}")
         except serial.SerialException as e:
             print(f"Error reading from UART: {e}")
 
-        time.sleep(0.01)  # Prevent busy-waiting
+        time.sleep(0.01)
 
 
 if driver_ttyUSB:
@@ -123,12 +124,15 @@ if sensor_ttyUSB:
 
 
 def uart_send(send_queue: Queue, data: bytes) -> None:
+    if send_queue == driverSndQueue:
+        print("Trying to send", data)
     send_queue.put(data)
 
 
 def uart_recv(recv_queue: Queue) -> bytes | None:
     if not recv_queue.empty():
         data: bytes = recv_queue.get()
+        # print("RECIEVED", data)
         return data
     return None
 
@@ -149,7 +153,7 @@ def getDriverData() -> bool:
     global driverRcvQueue
     if DEBUG_STANDALONE_MODE:
         return True
-    print("gettin driver data ...")
+    # print("gettin driver data ...")
     readBuf: bytes | None = uart_recv(driverRcvQueue)
     if readBuf:
         print(readBuf)
@@ -247,7 +251,7 @@ def flood(goal: tuple[int, int]) -> Direction:
                 if mapData[sq[1]][sq[0]] == SquareState.EMPTY:
                     floodQueue.put((sq, new_path))
                     if sq == goal:
-                        return path_there[0]
+                        return new_path[0]
     raise Exception("unreachable (flood)")
 
 
@@ -369,9 +373,9 @@ def addAdjacent():
 def getSensorData() -> list[int] | None:
     global sensorSndQueue, sensorRcvQueue
     uart_send(sensorSndQueue, (253).to_bytes(1, 'big'))
-    print("gettin sensor data ... ")
+    # print("gettin sensor data ... ")
     readBuf: bytes | None = uart_recv(sensorRcvQueue)
-    print("read sensor data !!!")
+    # print("read sensor data !!!")
 
     if readBuf:
         # print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
@@ -427,9 +431,9 @@ def sendSensorDataToInterface(conn, sensorData: list[int] | None) -> bool:
     try:
         ready = select.select([], [conn], [], 0)
         if ready[1]:
-            print("Sending sensor data to interface...")
+            # print("Sending sensor data to interface...")
             conn.sendall(struct.pack("<I", length) + pickled_data)
-            print("finished sending sensor data to interface...")
+            # print("finished sending sensor data to interface...")
     except ConnectionResetError:
         print("WARN: Connection reset")
         return False
@@ -528,14 +532,13 @@ def main() -> int:
         driverSndQueue.put((255).to_bytes(1, 'big'))
         sensorSndQueue.put((255).to_bytes(1, 'big'))
         print("getting driver ident (blocking...)")
-        sensorIdent: bytes = sensorRcvQueue.get()
-        driverIdent: bytes | None = uart_recv(driverRcvQueue)
+        firstIdent: bytes = sensorRcvQueue.get()
 
-        if int.from_bytes(sensorIdent, 'big') == 1:
+        if int.from_bytes(firstIdent, 'big') == 1:
             print("UART connections Should be fine?")
-        elif driverIdent and int.from_bytes(driverIdent, 'big') == 1:
+        if int.from_bytes(firstIdent, 'big') == 0xA:
             print("Switch UART connections...")
-            sys.exit(1)
+            sys.exit(9)
         else:
             print("Neither USB port sent identifier??")
 
@@ -562,7 +565,7 @@ def main() -> int:
             # conn.setblocking(0)
             print('Got new connection')
             while True:
-                print("LOOP")
+                # print("LOOP")
                 interfaceCommand = get_interface_data(conn)
                 match interfaceCommand:
                     case 0:
