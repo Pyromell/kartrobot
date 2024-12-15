@@ -378,13 +378,13 @@ def getSensorData() -> list[int] | None:
     # print("read sensor data !!!")
 
     if readBuf:
-        # print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
-        # print("FR", int.from_bytes(readBuf[0:1], 'big', signed=False))
-        # print("FL", int.from_bytes(readBuf[1:2], 'big', signed=False))
-        # print("F", int.from_bytes(readBuf[2:3], 'big', signed=False))
-        # print("BR", int.from_bytes(readBuf[3:4], 'big', signed=False))
-        # print("BL", int.from_bytes(readBuf[4:5], 'big', signed=False))
-        # print("B", int.from_bytes(readBuf[5:6], 'big', signed=False))
+        print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
+        print("FR", int.from_bytes(readBuf[0:1], 'big', signed=False))
+        print("FL", int.from_bytes(readBuf[1:2], 'big', signed=False))
+        print("F", int.from_bytes(readBuf[2:3], 'big', signed=False))
+        print("BR", int.from_bytes(readBuf[3:4], 'big', signed=False))
+        print("BL", int.from_bytes(readBuf[4:5], 'big', signed=False))
+        print("B", int.from_bytes(readBuf[5:6], 'big', signed=False))
 
         return [
             int.from_bytes(readBuf[2:3], 'big', signed=False),
@@ -420,7 +420,11 @@ def updateMap(sensorData: list[int]) -> None:
     mapData[robotPosition[1]][robotPosition[0]] = SquareState.ROBOT
 
 
-def sendSensorDataToInterface(conn, sensorData: list[int] | None) -> bool:
+def sendSensorDataToInterface(
+    conn,
+    sensorData: list[int] | None,
+    mapData: list[list[SquareState]],
+) -> bool:
     global robotPosition, currentDirection, autoMode, lastPosition, \
         driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     # print("SENDDDDDDDD\n")
@@ -527,7 +531,7 @@ def main() -> int:
     global robotPosition, currentDirection, autoMode, lastPosition, \
         driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, \
         queue, driverSndQueue, driverRcvQueue, sensorSndQueue, \
-        sensorRcvQueue
+        sensorRcvQueue, mapData
     try:
         driverSndQueue.put((255).to_bytes(1, 'big'))
         sensorSndQueue.put((255).to_bytes(1, 'big'))
@@ -536,15 +540,14 @@ def main() -> int:
 
         if int.from_bytes(firstIdent, 'big') == 1:
             print("UART connections Should be fine?")
-        if int.from_bytes(firstIdent, 'big') == 0xA:
+        elif int.from_bytes(firstIdent, 'big') == 0xA:
             print("Switch UART connections...")
             sys.exit(9)
         else:
-            print("Neither USB port sent identifier??")
+            print("First USB port sent neither identifier??")
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # client_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
 
         try:
             client_socket.bind(('0.0.0.0', 8027))
@@ -561,10 +564,9 @@ def main() -> int:
         while True:
             # conn, address = client_socket.accept()
 
-            # conn.settimeout(0.1)
-            # conn.setblocking(0)
             print('Got new connection')
             while True:
+                hasDoneCommand: bool = False
                 # print("LOOP")
                 interfaceCommand = get_interface_data(conn)
                 match interfaceCommand:
@@ -572,28 +574,28 @@ def main() -> int:
                         send_stop()
                         pass
                     case 1:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             send_forward(False)
                     case 2:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             send_backward(False)
                     case 3:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             turn_right(False)
                     case 4:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             turn_left(False)
                     case 6:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             send_forward(True)
                     case 6:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             send_backward(True)
                     case 7:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             turn_right(True)
                     case 8:
-                        if not autoMode:
+                        if not autoMode and driverReady:
                             turn_left(True)
                     case 9:
                         autoMode = not autoMode
@@ -605,13 +607,14 @@ def main() -> int:
                         return 2
                 if not driverReady:
                     driverReady = getDriverData()
+                    if driverReady:
+                        hasDoneCommand = True
 
                 sensorData: list[int] | None = None
                 if driverReady:
                     # sensorData = getSensorData()
                     if not DEBUG_STANDALONE_MODE:
                         sensorData = getSensorData()
-                        sensorData = getSimulatedSensorData()
                     else:
                         sensorData = getSimulatedSensorData()
 
@@ -621,8 +624,11 @@ def main() -> int:
                         pathfindEmpty()
 
                 autoMode = False
-                sendSensorDataToInterface(conn, sensorData)
-                # time.sleep(1)
+                if hasDoneCommand:
+                    sendSensorDataToInterface(conn, sensorData, mapData)
+                else:
+                    sendSensorDataToInterface(conn, sensorData, mapData)
+                time.sleep(0.01)
 
     except KeyboardInterrupt:
         # print("breakpoint...")
