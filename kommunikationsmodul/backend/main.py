@@ -91,8 +91,7 @@ def uart_thread(
             # print(ttyUSB, data_to_send)
             try:
                 ttyUSB.write(data_to_send)
-                if ttyUSB == driver_ttyUSB:
-                    print(f"Sent: {data_to_send}")
+                # print(f"Sent: {data_to_send}")
             except serial.SerialException as e:
                 print(f"Error writing to UART: {e}")
 
@@ -102,7 +101,8 @@ def uart_thread(
             if read_buf:
                 recv_queue.put(read_buf)
                 if ttyUSB == driver_ttyUSB:
-                    print(f"Received: {read_buf}")
+                    # print(f"Received: {read_buf}")
+                    pass
         except serial.SerialException as e:
             print(f"Error reading from UART: {e}")
 
@@ -296,22 +296,28 @@ def directionToCommand(direction: Direction) -> Command:
 queue: LifoQueue[tuple[int, int]] = LifoQueue()
 queue.put((robotPosition[0], robotPosition[1] - 1))  # start
 visitedSquares: set[tuple[int, int]] = set()
+returnToStart: bool = False
 
 
 def pathfindEmpty() -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, \
-        driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, queue
+        driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection, \
+        queue, returnToStart
     if queue.empty():
         if robotPosition != (37, 37):
             queue.put((37, 37))
+            returnToStart = True
         else:
             # moveToDirection(Direction.SOUTH)
             print("Done driving...")
             autoMode = False
             return
+
     next_square = queue.get()
-    if next_square in visitedSquares:
+    if (next_square in visitedSquares) and not returnToStart:
+        print("IGNORING NEXT SQUARE", len(queue.queue))
         return
+
     if robotPosition == next_square:
         return
 
@@ -378,13 +384,13 @@ def getSensorData() -> list[int] | None:
     # print("read sensor data !!!")
 
     if readBuf:
-        print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
-        print("FR", int.from_bytes(readBuf[0:1], 'big', signed=False))
-        print("FL", int.from_bytes(readBuf[1:2], 'big', signed=False))
-        print("F", int.from_bytes(readBuf[2:3], 'big', signed=False))
-        print("BR", int.from_bytes(readBuf[3:4], 'big', signed=False))
-        print("BL", int.from_bytes(readBuf[4:5], 'big', signed=False))
-        print("B", int.from_bytes(readBuf[5:6], 'big', signed=False))
+        # print("read " + str(len(readBuf)) + " amount of bytes from SENSOR")
+        # print("FR", int.from_bytes(readBuf[0:1], 'big', signed=False))
+        # print("FL", int.from_bytes(readBuf[1:2], 'big', signed=False))
+        # print("F", int.from_bytes(readBuf[2:3], 'big', signed=False))
+        # print("BR", int.from_bytes(readBuf[3:4], 'big', signed=False))
+        # print("BL", int.from_bytes(readBuf[4:5], 'big', signed=False))
+        # print("B", int.from_bytes(readBuf[5:6], 'big', signed=False))
 
         return [
             int.from_bytes(readBuf[2:3], 'big', signed=False),
@@ -395,7 +401,7 @@ def getSensorData() -> list[int] | None:
     return None
 
 
-def updateMap(sensorData: list[int]) -> None:
+def updateMap(sensorData: list[int] | None) -> None:
     global robotPosition, currentDirection, autoMode, lastPosition, \
         driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
     delta = []
@@ -542,7 +548,10 @@ def main() -> int:
             print("UART connections Should be fine?")
         elif int.from_bytes(firstIdent, 'big') == 0xA:
             print("Switch UART connections...")
-            sys.exit(9)
+            driverSndQueue, sensorSndQueue = sensorSndQueue, driverSndQueue
+            driverRcvQueue, sensorRcvQueue = sensorRcvQueue, driverRcvQueue
+            driver_ttyUSB, sensor_ttyUSB = sensor_ttyUSB, driver_ttyUSB
+            # sys.exit(9)
         else:
             print("First USB port sent neither identifier??")
 
@@ -622,8 +631,8 @@ def main() -> int:
                     if autoMode and sensorData:
                         addAdjacent()
                         pathfindEmpty()
+                        autoMode = False
 
-                autoMode = False
                 if hasDoneCommand:
                     sendSensorDataToInterface(conn, sensorData, mapData)
                 else:
