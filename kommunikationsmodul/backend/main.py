@@ -260,12 +260,42 @@ def adjacentSquares(
 ) -> list[tuple[tuple[int, int], Direction]]:
     global robotPosition, currentDirection, autoMode, lastPosition, \
         driver_ttyUSB, sensor_ttyUSB, driverReady, currentDirection
-    return [
+    
+    if currentDirection == Direction.NORTH:
+        return [
+        ((pos[0] - 1, pos[1]), Direction.WEST),
         ((pos[0], pos[1] + 1), Direction.SOUTH),
         ((pos[0], pos[1] - 1), Direction.NORTH),
+        ((pos[0] + 1, pos[1]), Direction.EAST)
+    ]
+    if currentDirection == Direction.EAST:
+        return [
+        ((pos[0], pos[1] - 1), Direction.NORTH),
+        ((pos[0] - 1, pos[1]), Direction.WEST),
         ((pos[0] + 1, pos[1]), Direction.EAST),
+        ((pos[0], pos[1] + 1), Direction.SOUTH)
+    ]
+    if currentDirection == Direction.SOUTH:
+        return [
+        ((pos[0] + 1, pos[1]), Direction.EAST),
+        ((pos[0], pos[1] - 1), Direction.NORTH),
+        ((pos[0], pos[1] + 1), Direction.SOUTH),
         ((pos[0] - 1, pos[1]), Direction.WEST)
     ]
+    if currentDirection == Direction.WEST:
+        return [
+        ((pos[0], pos[1] + 1), Direction.SOUTH),
+        ((pos[0] + 1, pos[1]), Direction.EAST),
+        ((pos[0] - 1, pos[1]), Direction.WEST),
+        ((pos[0], pos[1] - 1), Direction.NORTH)
+    ]
+        
+    # return [
+    #     ((pos[0], pos[1] + 1), Direction.SOUTH),
+    #     ((pos[0], pos[1] - 1), Direction.NORTH),
+    #     ((pos[0] + 1, pos[1]), Direction.EAST),
+    #     ((pos[0] - 1, pos[1]), Direction.WEST)
+    # ]
 
 
 class Command(IntEnum):
