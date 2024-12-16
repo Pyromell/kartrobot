@@ -7,6 +7,7 @@ volatile uint8_t table_right_speed = 0;
 volatile uint8_t controlled_left_speed = 0;
 volatile uint8_t controlled_right_speed = 0;
 volatile uint8_t exit_forward = 0;
+volatile uint8_t force_stop = 0;
 
 #include "init.c"
 #include "interrupt.c"
@@ -120,19 +121,24 @@ int main(void)
 	  switch(com_instr) {
 		  case 0:
 			  stop();
+			  force_stop = 0;
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x01:
+			  calibrate_FB();
 			  drive_40_cm('N');
-			  calibrate_all();
+			  calibrate_FB();
+			  force_stop = 0;
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 		  case 0x02:
+			  calibrate_FB();
 			  drive_40_cm('S');
-			  calibrate_all();
+			  calibrate_FB();
+			  force_stop = 0;
               com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
@@ -141,16 +147,16 @@ int main(void)
 			  calibrate_all();
 			  drive_turn('E');
 			  calibrate_all();
+			  force_stop = 0;
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
 
 		  case 0x04:
-			  calibrate_angle_complete();
 			  calibrate_all();
 			  drive_turn('W');
 			  calibrate_all();
-			  calibrate_angle_complete();
+			  force_stop = 0;
 			  com_instr = 'X';
 			  UART_Transmit_Instr_Done();
 			  break;
@@ -189,6 +195,7 @@ int main(void)
 
 		  default:
 			  stop();
+			  force_stop = 0;
 			  break;
 	  }
   }

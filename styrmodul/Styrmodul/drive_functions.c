@@ -92,14 +92,17 @@ void drive_40_cm(const unsigned char dir)
 	uint16_t reflex_l_start = reflex_l;
 	uint16_t reflex_r_start = reflex_r;
 	
-	while ( ((reflex_l_start + 21) > reflex_l) || ((reflex_r_start + 21) > reflex_r) )
+	while ( ((reflex_l_start + 20) > reflex_l) || ((reflex_r_start + 20) > reflex_r) )
 	{
 		if (timer_10_ms > 3)
 		{
 			UART_Transmit_Sen('I');
 			timer_10_ms = 0;
 		}
-
+		if (force_stop == 1 ) {
+			stop();
+			return;
+		}
 		if(11 <= ir_data[Sen_F] && ir_data[Sen_F] <= 14 && dir == 'N') {
 		  for (volatile int j = 0; j < 30; ++j)
 			  for (volatile int i = 0; i < 9999; ++i)
@@ -114,7 +117,7 @@ void drive_40_cm(const unsigned char dir)
 		}
 
 		control_tech(dir);
-    drive(dir, controlled_left_speed, controlled_right_speed);
+		drive(dir, controlled_left_speed, controlled_right_speed);
 	}
 	stop();
 }
@@ -140,6 +143,10 @@ void drive_turn(const char dir)
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
 			}
+			if (force_stop == 1 ) {
+				stop();
+				return;
+			}
 			drive('W', 2, 2);
 		}
 	}
@@ -152,6 +159,10 @@ void drive_turn(const char dir)
 				total_angle -= (sensor_gyro - old_gyro) * timer_10_ms;
 				UART_Transmit_Sen('G');
 				timer_10_ms = 0;
+			}
+			if (force_stop == 1 ) {
+				stop();
+				return;
 			}
 			drive('E', 2, 2);
 		}
@@ -166,6 +177,10 @@ void drive_turn(const char dir)
       	UART_Transmit_Sen('G');
       	timer_10_ms = 0;
     	}
+		if (force_stop == 1 ) {
+			stop();
+			return;
+		}
     	drive('W', 2, 2);
   	}
 	}
@@ -181,15 +196,20 @@ void calibrate_F() {
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
 	
-	while (17 <= ir_data[Sen_F] && ir_data[Sen_F] < 25) {
+	while (14 <= ir_data[Sen_F] && ir_data[Sen_F] < 25) {
 
 		drive('N', 1, 1);
+		
+		if (force_stop == 1 ) {
+			stop();
+			return;
+		}
 
-		if (timer_10_ms < 3) {
+		if (timer_10_ms > 3) {
 			UART_Transmit_Sen('I');
 			timer_10_ms = 0;
 		}
-		if (ir_data[Sen_F] <= 16) {
+		if (ir_data[Sen_F] <= 13) {
 			stop();
 			break;
 		}
@@ -203,15 +223,20 @@ void calibrate_B() {
   UART_Transmit_Sen('I');
   while (ir_recived == 0) {}
   
-  while (17 <= ir_data[Sen_B] && ir_data[Sen_B] < 25) {
+  while (14 <= ir_data[Sen_B] && ir_data[Sen_B] < 25) {
 
 	drive('S', 1, 1);
+	
+	if (force_stop == 1 ) {
+		stop();
+		return;
+	}
 
 	if (timer_10_ms > 3) {
 		UART_Transmit_Sen('I');
 		timer_10_ms = 0;
 	}
-	if (ir_data[Sen_B] <= 16) {
+	if (ir_data[Sen_B] <= 13) {
 		stop();
 		break;
 	}
@@ -241,6 +266,11 @@ void calibrate_angle() {
         timer_10_ms = 0;
         force_exit++;
       }
+	  
+	  if (force_stop == 1 ) {
+		  stop();
+		  return;
+	  }
 
       if (ir_data[Sen_RF] > (ir_data[Sen_RB] + 1)) {
         drive('E',2,2);
@@ -266,6 +296,11 @@ void calibrate_angle() {
         timer_10_ms = 0;
         force_exit++;
       }
+	  
+	  if (force_stop == 1 ) {
+		  stop();
+		  return;
+	  }
 
       if (ir_data[Sen_LF] > (ir_data[Sen_LB] + 1) ) {
         drive('W',2,2);
@@ -297,15 +332,41 @@ void calibrate_angle_complete() {
 
 
 void calibrate_all() {
+	ir_recived = 0;
+	UART_Transmit_Sen('I');
+	while (ir_recived == 0) {};
+	evaluate_walls();
+	
 	calibrate_angle_complete();
-	if (16 <= ir_data[Sen_F] && ir_data[Sen_F] <= 22 && (walls[Wall_L] || walls[Wall_R]) ) {	
+	if (14 <= ir_data[Sen_F] && ir_data[Sen_F] <= 22) {	
 		calibrate_F();
 	}
-	else if (16 <= ir_data[Sen_B] && ir_data[Sen_B] <= 22 && (walls[Wall_L] || walls[Wall_R]) ) {
+	else if (14 <= ir_data[Sen_B] && ir_data[Sen_B] <= 22 ) {
 		calibrate_B();
 	}
-	calibrate_angle_complete();
-		
+	calibrate_angle_complete();		
+}
+
+void calibrate_FB() {
+	ir_recived = 0;
+	UART_Transmit_Sen('I');
+	while (ir_recived == 0) {};
+	evaluate_walls();
+	
+	if (14 <= ir_data[Sen_F] && ir_data[Sen_F] <= 22 && (walls[Wall_L] || walls[Wall_R]) ) {
+		calibrate_angle_complete();
+		calibrate_F();
+	}
+	else if (14 <= ir_data[Sen_B] && ir_data[Sen_B] <= 22 && (walls[Wall_L] || walls[Wall_R]) ) {
+		calibrate_angle_complete();
+		calibrate_B();
+	}
+	else if (14 <= ir_data[Sen_F] && ir_data[Sen_F] <= 22) {
+		calibrate_F();
+	}
+	else if(14 <= ir_data[Sen_B] && ir_data[Sen_B] <= 22) {
+		calibrate_B();
+	}
 }
   /*
   i en korre om den inte står för nära en vägg:
